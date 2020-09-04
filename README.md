@@ -7,4 +7,4 @@ rust per un handlegraph: una libreria particolarmente efficiente per la gestione
 
 L'obiettivo dello stage è estendere rs-gfa affinché utilizzi direttamente un handlegraph per memorizzare il grafo.
 
-{Learn Rust by Examples](https://doc.rust-lang.org/stable/rust-by-example/)
+[Learn Rust by Examples](https://doc.rust-lang.org/stable/rust-by-example/)
