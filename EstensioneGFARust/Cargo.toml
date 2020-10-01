@@ -1,8 +1,0 @@
-[package]
-name = "EstensioneGFARust"
-version = "0.1.0"
-authors = ["Stievano Matteo"]
-
-[dependencies]
-rs-gfa = { git = "https://github.com/chfi/rs-gfa" } # from online repo
-rs-handlegraph = { git = "https://github.com/chfi/rs-handlegraph" } # from online repo
