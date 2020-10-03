@@ -23,7 +23,13 @@
   </component>
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/test/gfas" />
     <property name="org.rust.cargo.project.model.PROJECT_DISCOVERY" value="true" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\GitHub\STAGE\test\gfas" />
+    </key>
   </component>
   <component name="RunManager">
     <configuration name="Run" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
@@ -38,20 +44,10 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration default="true" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-      <option name="channel" value="DEFAULT" />
-      <option name="command" value="run" />
-      <option name="allFeatures" value="false" />
-      <option name="emulateTerminal" value="false" />
-      <option name="backtrace" value="SHORT" />
-      <envs />
-      <method v="2">
-        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
-      </method>
-    </configuration>
   </component>
   <component name="RustProjectSettings">
     <option name="toolchainHomeDirectory" value="$USER_HOME$/.cargo/bin" />
+    <option name="version" value="2" />
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -65,21 +61,25 @@
     <servers />
   </component>
   <component name="WindowStateProjectService">
-    <state width="2517" height="401" key="GridCell.Tab.0.bottom" timestamp="1601556086527">
+    <state x="1686" y="505" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1601712700130">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
-    <state width="2517" height="401" key="GridCell.Tab.0.bottom/2560.349.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1601556086527" />
-    <state width="2517" height="401" key="GridCell.Tab.0.center" timestamp="1601556086527">
+    <state x="1686" y="505" key="#com.intellij.fileTypes.FileTypeChooser/2560.349.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1601712700130" />
+    <state width="1234" height="232" key="GridCell.Tab.0.bottom" timestamp="1601721419942">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
-    <state width="2517" height="401" key="GridCell.Tab.0.center/2560.349.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1601556086527" />
-    <state width="2517" height="401" key="GridCell.Tab.0.left" timestamp="1601556086527">
+    <state width="1234" height="232" key="GridCell.Tab.0.bottom/2560.349.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1601721419942" />
+    <state width="1234" height="232" key="GridCell.Tab.0.center" timestamp="1601721419942">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
-    <state width="2517" height="401" key="GridCell.Tab.0.left/2560.349.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1601556086527" />
-    <state width="2517" height="401" key="GridCell.Tab.0.right" timestamp="1601556086527">
+    <state width="1234" height="232" key="GridCell.Tab.0.center/2560.349.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1601721419942" />
+    <state width="1234" height="232" key="GridCell.Tab.0.left" timestamp="1601721419942">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
-    <state width="2517" height="401" key="GridCell.Tab.0.right/2560.349.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1601556086527" />
+    <state width="1234" height="232" key="GridCell.Tab.0.left/2560.349.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1601721419942" />
+    <state width="1234" height="232" key="GridCell.Tab.0.right" timestamp="1601721419942">
+      <screen x="0" y="0" width="2560" height="1400" />
+    </state>
+    <state width="1234" height="232" key="GridCell.Tab.0.right/2560.349.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1601721419942" />
   </component>
 </project>
