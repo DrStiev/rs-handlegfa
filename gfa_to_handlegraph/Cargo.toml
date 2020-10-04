@@ -1,0 +1,16 @@
+[package]
+name = "gfa_to_handlegraph"
+version = "0.1.0"
+authors = ["DrStiev <55959491+DrStiev@users.noreply.github.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# importo dipendenze esterne da github
+gfa = { git = "https://github.com/chfi/rs-gfa" }
+handlegraph = { git = "https://github.com/chfi/rs-handlegraph" }
+
+# importo dipendenze
+clap = "3.0.0-beta.2"
+glob = "0.3.0"

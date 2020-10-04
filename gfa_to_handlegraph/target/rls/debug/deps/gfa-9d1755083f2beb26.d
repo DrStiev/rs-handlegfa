@@ -1,0 +1,15 @@
+d:\GitHub\STAGE\gfa_to_handlegraph\target\rls\debug\deps\gfa-9d1755083f2beb26.rmeta: C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\lib.rs C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\cigar.rs C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\gafpaf.rs C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\gfa.rs C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\gfa\name_conversion.rs C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\gfa\orientation.rs C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\gfa\traits.rs C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\optfields.rs C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\parser.rs C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\parser\error.rs C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\writer.rs
+
+d:\GitHub\STAGE\gfa_to_handlegraph\target\rls\debug\deps\gfa-9d1755083f2beb26.d: C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\lib.rs C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\cigar.rs C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\gafpaf.rs C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\gfa.rs C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\gfa\name_conversion.rs C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\gfa\orientation.rs C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\gfa\traits.rs C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\optfields.rs C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\parser.rs C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\parser\error.rs C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\writer.rs
+
+C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\lib.rs:
+C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\cigar.rs:
+C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\gafpaf.rs:
+C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\gfa.rs:
+C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\gfa\name_conversion.rs:
+C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\gfa\orientation.rs:
+C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\gfa\traits.rs:
+C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\optfields.rs:
+C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\parser.rs:
+C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\parser\error.rs:
+C:\Users\mstie\.cargo\git\checkouts\rs-gfa-7b1fe52c0cff27ae\6bff126\src\writer.rs:

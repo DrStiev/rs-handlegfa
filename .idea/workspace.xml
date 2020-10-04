@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="CargoProjects">
-    <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
-  </component>
   <component name="ChangeListManager">
-    <list default="true" id="b531ccc3-71e2-4b38-a7bb-7c475d1fc35a" name="Default Changelist" comment="" />
+    <list default="true" id="5d096240-2175-4edc-879d-50117a28776b" name="Default Changelist" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -14,80 +11,40 @@
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="MacroExpansionManager">
-    <option name="directoryName" value="if6q53zw" />
+    <option name="directoryName" value="wc30d26p" />
   </component>
-  <component name="ProjectId" id="1iHDt4eKZaIc68DtiTOgNgL6Eyj" />
+  <component name="ProjectId" id="1iQ0al5G6uxzOO9l7zenWYlpCPU" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/test/gfas" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/gfa_to_handlegraph" />
     <property name="org.rust.cargo.project.model.PROJECT_DISCOVERY" value="true" />
-  </component>
-  <component name="RecentsManager">
-    <key name="CopyFile.RECENT_KEYS">
-      <recent name="D:\GitHub\STAGE\test\gfas" />
-    </key>
-  </component>
-  <component name="RunManager">
-    <configuration name="Run" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-      <option name="channel" value="DEFAULT" />
-      <option name="command" value="run --package estensione_gfa_handlegraph --bin estensione_gfa_handlegraph" />
-      <option name="allFeatures" value="false" />
-      <option name="emulateTerminal" value="false" />
-      <option name="backtrace" value="SHORT" />
-      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <envs />
-      <method v="2">
-        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
-      </method>
-    </configuration>
   </component>
   <component name="RustProjectSettings">
     <option name="toolchainHomeDirectory" value="$USER_HOME$/.cargo/bin" />
-    <option name="version" value="2" />
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="b531ccc3-71e2-4b38-a7bb-7c475d1fc35a" name="Default Changelist" comment="" />
-      <created>1601555840837</created>
+      <changelist id="5d096240-2175-4edc-879d-50117a28776b" name="Default Changelist" comment="" />
+      <created>1601824575133</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1601555840837</updated>
+      <updated>1601824575133</updated>
     </task>
     <servers />
   </component>
   <component name="WindowStateProjectService">
-    <state x="1686" y="505" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1601712700130">
+    <state x="1672" y="524" key="#Notifications" timestamp="1601824613867">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
-    <state x="1686" y="505" key="#com.intellij.fileTypes.FileTypeChooser/2560.349.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1601712700130" />
-    <state width="1234" height="232" key="GridCell.Tab.0.bottom" timestamp="1601731785172">
+    <state x="1672" y="524" key="#Notifications/2560.349.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1601824613867" />
+    <state x="1700" y="455" key="FileChooserDialogImpl" timestamp="1601824653897">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
-    <state width="1234" height="232" key="GridCell.Tab.0.bottom/2560.349.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1601731785172" />
-    <state width="1234" height="232" key="GridCell.Tab.0.center" timestamp="1601731785172">
-      <screen x="0" y="0" width="2560" height="1400" />
-    </state>
-    <state width="1234" height="232" key="GridCell.Tab.0.center/2560.349.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1601731785172" />
-    <state width="1234" height="232" key="GridCell.Tab.0.left" timestamp="1601731785171">
-      <screen x="0" y="0" width="2560" height="1400" />
-    </state>
-    <state width="1234" height="232" key="GridCell.Tab.0.left/2560.349.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1601731785171" />
-    <state width="1234" height="232" key="GridCell.Tab.0.right" timestamp="1601731785172">
-      <screen x="0" y="0" width="2560" height="1400" />
-    </state>
-    <state width="1234" height="232" key="GridCell.Tab.0.right/2560.349.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1601731785172" />
-    <state x="1737" y="617" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2" timestamp="1601729483900">
-      <screen x="0" y="0" width="2560" height="1400" />
-    </state>
-    <state x="1737" y="617" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2/2560.349.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1601729483900" />
-    <state x="1487" y="432" width="865" height="629" key="com.intellij.xdebugger.impl.breakpoints.ui.BreakpointsDialogFactory$2" timestamp="1601730549280">
-      <screen x="0" y="0" width="2560" height="1400" />
-    </state>
-    <state x="1487" y="432" width="865" height="629" key="com.intellij.xdebugger.impl.breakpoints.ui.BreakpointsDialogFactory$2/2560.349.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1601730549280" />
+    <state x="1700" y="455" key="FileChooserDialogImpl/2560.349.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1601824653897" />
   </component>
 </project>
