@@ -140,7 +140,6 @@ fn help() {
 #[cfg(test)]
 mod tests{
     use super::*;
-    use std::env::temp_dir;
 
     /// implement test function for help
     #[test]
@@ -152,7 +151,7 @@ mod tests{
     #[test]
     fn read_existing_file() {
         println!("Test function \"read_file\" passing an existing file as input\n");
-        let temp_filepath = "test/gfas/example1.gfa";
+        let temp_filepath = "test/gfas/gfa1_files/example1.gfa";
         print(read_file(temp_filepath));
     }
 
@@ -160,7 +159,7 @@ mod tests{
     #[test]
     fn read_empty_file() {
         println!("Test function \"read_file\" passing an existing empty file as input\n");
-        let temp_filepath = "test/gfas/empty_file.gfa";
+        let temp_filepath = "test/gfas/gfa2_files/blankDocument.gfa";
         print(read_file(temp_filepath));
     }
 
@@ -168,7 +167,7 @@ mod tests{
     #[test]
     fn read_big_file() {
         println!("Test function \"read_file\" passing an existing file >= 1MB as input\n");
-        let temp_filepath = "test/gfas/Big_file/very_big_file.gfa";
+        let temp_filepath = "test/gfas/big_file/very_big_file.gfa";
         print(read_file(temp_filepath));
     }
 
@@ -287,7 +286,7 @@ fn main() {
         // if the number of argument passed as command line parameters is not proper
         // the program will display an error message to inform the user
         _ => {
-            eprintln ! ("Error! The number of argument passed is not correct to run the program properly!\n");
+            eprintln!("Error! The number of argument passed is not correct to run the program properly!\n");
             help();
             return;
         },
