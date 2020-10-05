@@ -2,12 +2,6 @@
 /// (october 4, 2020)
 use super::*;
 
-/// implement test function for help
-#[test]
-fn test_help() {
-    help(Some(0));
-}
-
 /// implement test function for read_file passing an existing file as input
 #[test]
 fn read_existing_file() {
@@ -60,7 +54,7 @@ fn write_content_on_valid_file() {
 /// implement test function for write_file passing an existing file and path as input
 #[test]
 fn write_on_unnamed_file() {
-    println!("Test function \"write_file\" passing a valid file and a valid content\n");
+    println!("Test function \"write_file\" passing an unnamed file and a valid content\n");
     let tempfile = "";
     let tempcontent = read_file("test/gfas/gfa2_files/example2.gfa").unwrap();
     check_file_exist(write_file(tempfile, &tempcontent)); 
@@ -69,7 +63,7 @@ fn write_on_unnamed_file() {
 /// implement test function for write_file passing an existing file and path as input
 #[test]
 fn write_empty_file() {
-    println!("Test function \"write_file\" passing a valid file and a valid content\n");
+    println!("Test function \"write_file\" passing a valid file and an empty content\n");
     let tempfile = "test/test_output_file/empty_file.gfa";
     check_file_exist(write_file(tempfile, "")); 
 }
