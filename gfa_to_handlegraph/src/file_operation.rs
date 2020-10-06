@@ -55,17 +55,15 @@ pub fn read_file(filename: &str) -> Result<String, io::Error> {
 
 /// a function to control if a the file created by write_file exist or not
 /// (october 5, 2020) 
-#[warn(dead_code)]
-pub fn check_file_exist(result: Result<bool, io::Error>) {
+pub fn print_file_result(result: Result<bool, io::Error>) {
     match result {
-        Ok(_) => println!("File created successfully!"),
+        Ok(_) => println!("File created and wrote successfully!"),
         Err(why) => println!("Error: {}", why),
     }
 }
 
 /// a function that create a file and then write a string of information in it
 /// (october 5, 2020)
-#[warn(dead_code)]
 pub fn write_file(filename: &str, content: &str) -> Result<bool, io::Error> {
     let path = Path::new(filename);
 

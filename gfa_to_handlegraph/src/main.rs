@@ -2,16 +2,9 @@
 /// genomic graphs that are being represented via the library rs-gfa
 /// Both of the libraries are developed by Christian Fischer and are available on GitHub
 
-/// external libraries from github
-use handlegraph;
-use gfa;
-
 /// library for handling the CLI input
 #[macro_use]
 extern crate clap;
-/// library to access the arguments passed as command line parameters
-/// (october 4, 2020)
-use std::env;
 
 /// separated the main.rs file from the file that handles the operation over a file
 /// this improves the readability of the code (imho)
@@ -26,11 +19,11 @@ use file_operation::*;
 mod test;
 
 fn main() {
+    // REMEMBER! ./target/debug/gfa_to_handlegraph --help
+    // USAGE: gfa_to_handlegraph.exe [OPTIONS] <INPUT> [SUBCOMMAND]
 
     // define a default operation
     static DEFAULT_OPERATION: &str = "rf";
-    // REMEMBER! ./target/debug/gfa_to_handlegraph --help
-    // USAGE: gfa_to_handlegraph.exe [OPTIONS] <INPUT> [SUBCOMMAND]
 
     // use clap as a macro to handle the argument passed as parameters via command line
     // (october 5, 2020)
@@ -40,9 +33,10 @@ fn main() {
         (about: "The point of this project is to implement the rs-handlegraph interface to handling\n\
                 genomic graphs that are being represented via the library rs-gfa.\n\
                 Both of the libraries are developed by Christian Fischer and are available on GitHub\n")
-        (@arg INPUT: +required "Set the input file to use")
         (@arg OPERATION: -o --operation +takes_value "Sets a custom operation to do with the file\n\
-                > rf: read file\n> rd: read directory\n> rdf: read all files from directory")
+                > rf: read a file\n> rdf: read all files from a directory")
+        (@arg INPUT: +required "Set the input file (or the directory) to read")
+        (@arg OUTPUT: +required "Set the output file where write the result")
         (@subcommand test => 
             (about: "Controls testing features")
             (version: "1.0")
@@ -53,59 +47,66 @@ fn main() {
     // required we could have used an 'if let' to conditionally get the value)
     let input_file = matches.value_of("INPUT").unwrap();
 
+    let output_file = matches.value_of("OUTPUT").unwrap();
+
     // Gets a value for operation if supplied by user, or use the default one
     match matches.value_of("OPERATION").unwrap_or(DEFAULT_OPERATION) {
-        "rf" => print(read_file(input_file)),
-
-        "rd" => {
-            // warning!
-            // use unwrap() only if sure that argument has at least 1 character
-            let last_char = input_file.chars().last().unwrap();
-            
-            // check the last character of the directory path is *
-            // otherwise the read_directory_file will not run properly and instead of
-            // display the entire body of the directory, it will return only the path
-            // insert as input
-            let dir: String;
-            // changed control statement from if-else to match
-            // (october 5, 2020) 
-            match last_char {
-                '/' => dir = format!("{}{}",input_file.clone(), "*"),
-                _ => dir = format!("{}{}",input_file.clone(), "/*"),
-            }
-            
-            print_dir(read_directory_files(&dir))
-        },
+        "rf" => print_file_result(write_file(output_file, &read_file(input_file).unwrap())),
 
         "rdf" => {
-            // warning!
-            // use unwrap() only if sure that argument has at least 1 character
-            let last_char = input_file.chars().last().unwrap();
-            
-            // check the last character of the directory path is *
-            // otherwise the read_directory_file will not run properly and instead of
-            // display the entire body of the directory, it will return only the path
-            // insert as input
-            let dir: String;
-            // changed control statement from if-else to match
-            // (october 5, 2020) 
-            match last_char {
-                '/' => dir = format!("{}{}",input_file.clone(), "*"),
-                _ => dir = format!("{}{}",input_file.clone(), "/*"),
-            }
-            
-            print_dir(read_directory_files(&dir));
+            // take the last 2 characters of the string to check if they are EXACTLY "/*" (or "\*")
+            // otherwise the function read_file_directory could not work properly
+            // (october 6, 2020)
+            if let Some((i, _)) = input_file.char_indices().rev().nth(1) {
+                let last_two_char = &input_file[i..];
 
-            let dirpath = read_directory_files(&dir);
-            for files in dirpath {
-                for file in files {
-                    print(read_file(&file))
+                match last_two_char {
+
+                    "/*" | "\\*" => {
+                        let dir_content = read_directory_files(&input_file);
+
+                        let mut content_to_write: String = "".to_string();
+
+                        // write the content of each file read in the directory passed as input 
+                        // (october 6, 2020)
+                        for files in dir_content {
+                            for file in files {
+                                // each file will be write as "filename\ncontent\n\n"
+                                content_to_write.push_str(&file);
+                                content_to_write.push_str("\n");
+                                content_to_write.push_str(&read_file(&file).unwrap().clone());
+                                content_to_write.push_str("\n\n");
+                            }
+                        }
+
+                        print_file_result(write_file(output_file, &content_to_write))
+                    },
+
+                    _ => {
+                        let dir_path = format!("{}{}", input_file.clone(), "/*");
+                        let dir_content = read_directory_files(&dir_path);
+
+                        let mut content_to_write: String = "".to_string();
+                        
+                        // write the content of each file read in the directory passed as input 
+                        // (october 6, 2020)
+                        for files in dir_content {
+                            for file in files {
+                                // each file will be write as "filename\ncontent\n\n"
+                                content_to_write.push_str(&file);
+                                content_to_write.push_str("\n");
+                                content_to_write.push_str(&read_file(&file).unwrap().clone());
+                                content_to_write.push_str("\n\n");
+                            }
+                        }
+                        print_file_result(write_file(output_file, &content_to_write))
+                    }
                 }
             }
         },
 
-        _ => eprintln!("Error! the argument passed as OPTION is not valid\n\
-                        Run application.exe --help or application.exe -h to show the instruction to use \
+        _ => eprintln!("Error! the argument passed as OPERATION is not valid\n\
+                        Run application.exe --help or application.exe -h to show how to use \
                         the application properly\n"),
     };
 }

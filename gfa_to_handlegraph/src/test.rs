@@ -48,7 +48,7 @@ fn write_content_on_valid_file() {
     println!("Test function \"write_file\" passing a valid file and a valid content\n");
     let tempfile = "test/test_output_file/test_file.gfa";
     let tempcontent = read_file("test/gfas/gfa2_files/example2.gfa").unwrap();
-    check_file_exist(write_file(tempfile, &tempcontent)); 
+    print_file_result(write_file(tempfile, &tempcontent)); 
 }
 
 /// implement test function for write_file passing an existing file and path as input
@@ -57,7 +57,7 @@ fn write_on_unnamed_file() {
     println!("Test function \"write_file\" passing an unnamed file and a valid content\n");
     let tempfile = "";
     let tempcontent = read_file("test/gfas/gfa2_files/example2.gfa").unwrap();
-    check_file_exist(write_file(tempfile, &tempcontent)); 
+    print_file_result(write_file(tempfile, &tempcontent)); 
 }
 
 /// implement test function for write_file passing an existing file and path as input
@@ -65,7 +65,7 @@ fn write_on_unnamed_file() {
 fn write_empty_file() {
     println!("Test function \"write_file\" passing a valid file and an empty content\n");
     let tempfile = "test/test_output_file/empty_file.gfa";
-    check_file_exist(write_file(tempfile, "")); 
+    print_file_result(write_file(tempfile, "")); 
 }
 
 /// implement test function for read_directory_files passing an existing directory as input
