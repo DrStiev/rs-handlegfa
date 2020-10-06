@@ -10,9 +10,7 @@ use glob::glob;
 /// library to access the path of a file
 use std::path::Path;
 
-// (october 4, 2020)
-// TODO: find a way to display either the content (or the error) and the name of the file
-/// function to print the result of the function read_file
+/// function to print the result of the read_file function
 /// the result could be either the content of a file or an error message
 /// (october 3, 2020)
 pub fn print(result: Result<String, io::Error>) {
@@ -109,9 +107,9 @@ pub fn read_directory_files(dirname: &str) -> Result<Vec<String>, io::Error> {
     // nested directory will be returned as if they are plain file
     for e in glob(dirname).expect("Failed to read glob pattern") {
         match e {
-            // if match gives a positive result, that means the directory exist,
-            // go and store the name of the file (or sub-directory) found in it
-            // insert the name of the file (or sub-directory) into the Vec<String> variable "files"
+            // if match gives a positive result, that means the directory exist, so 
+            // save the name of the files (or sub-directories) that are in it 
+            // in a Vec<String> variable
             Ok(path) => files.push(path.display().to_string()),
                  
             // this branch of the match statement seems to not working properly.
@@ -122,7 +120,7 @@ pub fn read_directory_files(dirname: &str) -> Result<Vec<String>, io::Error> {
         }
     }
     // return the vector containing the result produced by the function
-    // a return expression DO NOT want the character ";" at the end of it
+    // a return expression DOES NOT want the character ";" at the end of it
     // otherwise the function will return its default value ()
     Ok(files)
 }
