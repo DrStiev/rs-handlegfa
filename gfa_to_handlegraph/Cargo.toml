@@ -7,10 +7,9 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-# importo dipendenze esterne da github
-gfa = { git = "https://github.com/chfi/rs-gfa" }
-handlegraph = { git = "https://github.com/chfi/rs-handlegraph" }
-
-# importo dipendenze
+# the version "0.8.0" of the library gfa it's not perfect, in fact it cannot properly 
+# convert some element of the GFA1 format
+gfa = "0.8.0"
+handlegraph = "0.4.0"
 clap = "3.0.0-beta.2"
 glob = "0.3.0"

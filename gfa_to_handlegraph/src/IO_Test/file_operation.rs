@@ -2,11 +2,13 @@
 /// (october 3, 2020)
 use std::fs::File;
 use std::io::prelude::*;
+
 /// library to access the arguments passed as command line parameters
 /// (october 4, 2020)
 use std::io;
 extern crate glob;
 use glob::glob;
+
 /// library to access the path of a file
 use std::path::Path;
 
@@ -102,10 +104,23 @@ pub fn print_dir(dircontent: Result<Vec<String>, io::Error>) {
 pub fn read_directory_files(dirname: &str) -> Result<Vec<String>, io::Error> {
     // declare a Vec<String> variable to store the results
     let mut files:Vec<String> = vec![];
+    let mut dir: String = "".to_string();
+
+    // take the last 2 characters of the string to check if they are EXACTLY "/*" (or "\*")
+    // otherwise the function read_file_directory could not work properly
+    // (october 6, 2020)
+    if let Some((i,_)) = dirname.char_indices().rev().nth(1) {
+        let last_two_char = &dirname[i..];
+
+        match last_two_char {
+            "/*" | "\\*" => (),
+            _ => dir = format!("{}{}", dirname, "/*"),
+        }
+    }
 
     // Search through the entire directory with a loop
     // nested directory will be returned as if they are plain file
-    for e in glob(dirname).expect("Failed to read glob pattern") {
+    for e in glob(&dir).expect("Failed to read glob pattern") {
         match e {
             // if match gives a positive result, that means the directory exist, so 
             // save the name of the files (or sub-directories) that are in it 
@@ -119,7 +134,7 @@ pub fn read_directory_files(dirname: &str) -> Result<Vec<String>, io::Error> {
             Err(why) => println!("Error: {}", why),
         }
     }
-    // return the vector containing the result produced by the function
+    // return the vector containing the result produced by the function.
     // a return expression DOES NOT want the character ";" at the end of it
     // otherwise the function will return its default value ()
     Ok(files)

@@ -5,26 +5,37 @@
 /// library for handling the CLI input
 #[macro_use]
 extern crate clap;
+extern crate gfa;
+extern crate handlegraph;
 
 /// separated the main.rs file from the file_operation.rs file
 /// this improves the readability of the code (imho)
 /// (october 5, 2020)
 
+/// import the library to handle OS path
+use std::path::{Path, PathBuf};
+
 /// import the file where the functions are defined
+#[path = "IO_Test/file_operation.rs"]
 mod file_operation; 
 use file_operation::*;
 
-/// import the library to handle OS path
-use std::path::Path;
-
-/// separated the test.rs file from the main.rs file so the code can remain clean and readable
-/// (october 5, 2020)
 #[cfg(test)]
-mod test;
+#[path = "IO_Test/test_file_operation.rs"]
+pub mod test_file_operation;
+
+/// import the file that handles the gfa files
+#[path = "parser/gfa_parser.rs"]
+mod gfa_parser;
+use gfa_parser::*;
+
+#[cfg(test)]
+#[path = "parser/test_gfa_parser.rs"]
+mod test_gfa_parser; 
 
 fn main() {
     // REMEMBER! ./target/debug/gfa_to_handlegraph --help
-    // USAGE: gfa_to_handlegraph.exe [OPTIONS] <INPUT> <OUTPUT> [SUBCOMMAND]
+    // USAGE: gfa_to_handlegraph.exe [OPTIONS] <INPUT> [OUTPUT] [SUBCOMMAND]
 
     // define a default operation and path
     static DEFAULT_OPERATION: &str = "rf";
@@ -40,9 +51,9 @@ fn main() {
     let matches = clap_app!(gfa_to_handlegraph =>
         (version: "1.0")
         (author: "Stievano Matteo <m.stievano1@campus.unimib.it>")
-        (about: "The point of this project is to implement the rs-handlegraph interface to handling\n\
-                genomic graphs that are being represented via the library rs-gfa.\n\
-                Both of the libraries are developed by Christian Fischer and are available on GitHub\n")
+        (about: "The point of this project is to implement the rs-handlegraph interface to represent\n\
+                genomic graphs that are being parsed by the library rs-gfa.\n\
+                Both of the libraries developed by Christian Fischer are available on GitHub\n")
         (@arg OPERATION: -o --operation +takes_value "Sets a custom operation to do with the file\n\
                 > rf: read a file\n> rdf: read all files from a directory")
         (@arg INPUT: +required "Set the input file (or the directory) to read")
@@ -71,58 +82,33 @@ fn main() {
 
     // Gets a value for operation if supplied by user, or use the default one
     match matches.value_of("OPERATION").unwrap_or(DEFAULT_OPERATION) {
-        "rf" => print_file_result(write_file(output_file, &read_file(input_file).unwrap())),
+        "rf" => {
+            println!("\nCall the function read_file, then write_file and finally print_file_result");
+            print_file_result(write_file(output_file, &read_file(input_file).unwrap()));
+            
+            println!("\nCall the function file_to_gfa, then print_gfa_file");
+            let mut path = PathBuf::new();
+            path.push(input_file);
+            print_gfa_file(file_to_gfa(&path))
+        },
 
         "rdf" => {
-            // take the last 2 characters of the string to check if they are EXACTLY "/*" (or "\*")
-            // otherwise the function read_file_directory could not work properly
+            let dir_content = read_directory_files(&input_file);
+            let mut content_to_write: String = "".to_string();
+
+            // write the content of each file read in the directory passed as input 
             // (october 6, 2020)
-            if let Some((i, _)) = input_file.char_indices().rev().nth(1) {
-                let last_two_char = &input_file[i..];
-
-                match last_two_char {
-
-                    "/*" | "\\*" => {
-                        let dir_content = read_directory_files(&input_file);
-
-                        let mut content_to_write: String = "".to_string();
-
-                        // write the content of each file read in the directory passed as input 
-                        // (october 6, 2020)
-                        for files in dir_content {
-                            for file in files {
-                                // each file will be write as "filename\ncontent\n\n"
-                                content_to_write.push_str(&file);
-                                content_to_write.push_str("\n");
-                                content_to_write.push_str(&read_file(&file).unwrap());
-                                content_to_write.push_str("\n\n");
-                            }
-                        }
-
-                        print_file_result(write_file(output_file, &content_to_write))
-                    },
-
-                    _ => {
-                        let dir_path = format!("{}{}", input_file.clone(), "/*");
-                        let dir_content = read_directory_files(&dir_path);
-
-                        let mut content_to_write: String = "".to_string();
-                        
-                        // write the content of each file read in the directory passed as input 
-                        // (october 6, 2020)
-                        for files in dir_content {
-                            for file in files {
-                                // each file will be write as "filename\ncontent\n\n"
-                                content_to_write.push_str(&file);
-                                content_to_write.push_str("\n");
-                                content_to_write.push_str(&read_file(&file).unwrap());
-                                content_to_write.push_str("\n\n");
-                            }
-                        }
-                        print_file_result(write_file(output_file, &content_to_write))
-                    }
+            for files in dir_content {
+                for file in files {
+                    // each file will be write as "filename\ncontent\n\n"
+                    content_to_write.push_str(&file);
+                    content_to_write.push_str("\n");
+                    content_to_write.push_str(&read_file(&file).unwrap());
+                    content_to_write.push_str("\n\n");
                 }
             }
+
+            print_file_result(write_file(output_file, &content_to_write))
         },
 
         _ => eprintln!("Error! the argument passed as OPERATION is not valid\n\
