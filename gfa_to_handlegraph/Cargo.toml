@@ -10,6 +10,8 @@ edition = "2018"
 # the version "0.8.0" of the library gfa it's not perfect, in fact it cannot properly 
 # convert some element of the GFA1 format
 gfa = "0.8.0"
-handlegraph = "0.4.0"
+# gfa = { git = "https://github.com/chfi/rs-gfa" }
+handlegraph = "0.5.0"
 clap = "3.0.0-beta.2"
 glob = "0.3.0"
+bstring = "0.1.0"
