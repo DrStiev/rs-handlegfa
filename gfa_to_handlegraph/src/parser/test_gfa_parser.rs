@@ -14,7 +14,7 @@ use super::*;
         // the optional field in the segment seems to be left behind and not parsed
         // seems that if there are more than 1 header field this is completely ignored
         let mut file = PathBuf::new();
-        file.push("test\\gfas\\gfa1_files\\check_overlap_test.gfa");
+        file.push("test\\gfas\\gfa1_files\\compression_test.gfa");
         print_gfa_file(file_to_gfa(&file));
     }
 
