@@ -1,22 +1,3 @@
-
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub enum OptionalFieldValue {
-    PrintableChar(char),
-    SignedInt(i64),
-    Float(f32),
-    PrintableString(String),
-    JSON(String),
-    ByteArray(Vec<u8>),
-    IntArray(Vec<i32>),
-    FloatArray(Vec<f32>),
-}
-
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct OptionalField {
-    pub tag: String,
-    pub content: OptionalFieldValue,
-}
-
 /// The header contains an optional 'VN' SAM-tag version number, 2.0, 
 /// and an optional 'TS' SAM-tag specifying the default the trace point spacing for any Dazzler traces 
 /// specified to accelerate alignment computation. Any number of header lines containing SAM-tags may occur. 
@@ -26,8 +7,15 @@ pub struct OptionalField {
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Header {
     pub version: String,
-    // the trace spacing field and the tag field are optional so u can use 
-    // the OptionalFieldValue to handle them
+    // pub tag: Vec<String>,
+}
+impl Header {
+    pub fn new(version: &str, tag: Vec<&str>) -> Header {
+        Header {
+            version: version.to_string(),
+            // tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
+        }
+    }
 }
 
 /// A segment is specified by an S-line giving a user-specified ID for the sequence, 
@@ -42,30 +30,16 @@ pub struct Segment {
     pub id: String,
     pub len: String,
     pub sequence: String,
+    // pub tag: Vec<String>,
 }
 
 impl Segment {
-    pub fn new(name: &str, len: &str, sequence: &str) -> Self {
+    pub fn new(name: &str, len: &str, sequence: &str, tag: Vec<&str>) -> Segment {
         Segment {
             id: name.to_string(),
             len: len.to_string(),
             sequence: sequence.to_string(),
-        }
-    }
-}
-
-// idk if keep this function or not, probably not
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-pub enum Orientation {
-    Forward,
-    Backward,
-}
-
-impl Orientation {
-    pub fn as_bool(&self) -> bool {
-        match self {
-            Self::Forward => true,
-            Self::Backward => false,
+            // tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
         }
     }
 }
@@ -87,6 +61,7 @@ pub struct Fragment {
     pub fend: String,
     // alignment field can be *, trace or CIGAR
     pub alignment: String, 
+    // pub tag: Vec<String>,
 }
 
 impl Fragment {
@@ -98,6 +73,7 @@ impl Fragment {
         fbeg: &str,
         fend: &str,
         alignment: &str,
+        tag: Vec<&str>,
     ) -> Fragment {
         Fragment {
             id: id.to_string(),
@@ -107,6 +83,7 @@ impl Fragment {
             fbeg: fbeg.to_string(),
             fend: fend.to_string(),
             alignment: alignment.to_string(),
+            // tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
         }
     }
 }
@@ -162,6 +139,7 @@ pub struct Edge {
     pub beg2: String,
     pub end2: String, // dollar character as optional final char
     pub alignment: String,
+    // pub tag: Vec<String>,
 }
 
 impl Edge {
@@ -174,6 +152,7 @@ impl Edge {
         beg2: &str,
         end2: &str,
         alignment: &str,
+        tag: Vec<&str>,
     ) -> Edge {
         Edge {
             id: id.to_string(),
@@ -184,6 +163,7 @@ impl Edge {
             beg2: beg2.to_string(),
             end2: end2.to_string(),
             alignment: alignment.to_string(),
+            // tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
         }
     }
 }
@@ -206,6 +186,7 @@ pub struct Gap {
     pub sid2: String, // orientation as final char (+-)
     pub dist: String,
     pub var: String,
+    // pub tag: Vec<String>,
 }
 
 impl Gap {
@@ -215,6 +196,7 @@ impl Gap {
         sid2: &str,
         dist: &str,
         var: &str,
+        tag: Vec<&str>,
     ) -> Gap {
         Gap {
             id: id.to_string(),
@@ -222,6 +204,7 @@ impl Gap {
             sid2: sid2.to_string(),
             dist: dist.to_string(),
             var: var.to_string(),
+            // tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
         }
     }
 }
@@ -249,19 +232,19 @@ impl Gap {
 // this field can implment or not an optional tag (using * char)
 pub struct Group {
     pub id: String, // optional id, can be either * or id tag
-    pub var_field: String, // variable field, O-Group have this as optional tag
-                    // instead U-Group have dis as normal tag    
-    // vec_var_field: Vec<String>, 
+    pub var_field: Vec<String>, // variable field, O-Group have this as optional tag
+                    // instead U-Group have dis as normal tag   
+    // pub tag: Vec<String>,  
 }
 
 impl Group {
-    pub fn new(id: &str, var_field: &str) -> Group {
+    pub fn new(id: &str, var_field: Vec<&str>, tag: Vec<&str>) -> Group {
         Group {
             id: id.to_string(),
-            var_field: var_field.to_string(),
+            var_field: var_field.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
             // convert a Vec<T> to Vec<String>
             // this conversion is used to convert Vec<&str> to Vec<String>
-            // vec_var_field: vec_var_field.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
+            // tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
         }
     }
 }

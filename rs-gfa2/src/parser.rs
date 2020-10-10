@@ -1,8 +1,6 @@
 use nom::{
-    branch::alt,
     bytes::complete::*,
     character::complete::*,
-    combinator::map,
     sequence::terminated,
     IResult,
 };
@@ -16,8 +14,9 @@ use std::{
 use crate::gfa2::*;
 
 /// function that parse the id tag (NOT OPTIONAL)
+/// add the vector part
 fn parse_id(input: &str) -> IResult<&str, String> {
-    let (i, id) = re_find!(input, r"[!-~]+")?;
+    let (i, id) = re_find!(input, r"[!-~]+([ ][!-~]+)*")?;
     Ok((i, id.to_string()))
 }
 
@@ -28,15 +27,16 @@ fn parse_opt_id(input: &str) -> IResult<&str, String> {
 }
 
 /// function that parse the ref tag
+/// /// add the vector part
 fn parse_ref(input: &str) -> IResult<&str, String> {
-    let(i, ref_id) = re_find!(input, r"[!-~]+[+-]")?;
+    let(i, ref_id) = re_find!(input, r"[!-~]+[+-]([ ][!-~]+[+-])*")?;
     Ok((i, ref_id.to_string()))
 }
 
 /// function that parse the tag element (this field is optional)
 // not implemented yet
 fn parse_tag(input: &str) -> IResult<&str, String> {
-    let (i, seq) = re_find!(input, r"[A-Za-z0-9][A-Za-z0-9]:[ABHJZif]:[ -~]*")?;
+    let (i, seq) = re_find!(input, r"([A-Za-z0-9][A-Za-z0-9]:[ABHJZif]:[ -~]*)*")?;
     Ok((i, seq.to_string()))
 }
 
@@ -51,8 +51,7 @@ fn parse_alignment(input: &str) -> IResult<&str, String> {
     // * "empty"
     // ([0-9]+[MDIP])+ CIGAR alignment
     // \-?[0-9]+(,\-?[0-9]+)* trace alignment
-    // i'm not too sure if this regex will work or not
-    let (i, seq) = re_find!(input, r"\*|([0-9]+[MDIP])+|\-?[0-9]+(,\-?[0-9]+)*")?; 
+    let (i, seq) = re_find!(input, r"\*|([0-9]+[MDIP])+|(\-?[0-9]+(,\-?[0-9]+)*)")?; 
     Ok((i, seq.to_string()))
 }
 
@@ -68,35 +67,24 @@ fn parse_int(input: &str) -> IResult<&str, String> {
     Ok((i, int.to_string()))
 }
 
-// idk if keep this function or not, probably not
-fn parse_orient(input: &str) -> IResult<&str, Orientation> {
-    let fwd = map(tag("+"), |_| Orientation::Forward);
-    let bkw = map(tag("-"), |_| Orientation::Backward);
-    alt((fwd, bkw))(input)
+/// function that parse the first (and second) field of the header tag
+fn parse_header_tag(input: &str) -> IResult<&str, String> {
+    let(i, header) = re_find!(input, r"(VN:Z:2.0)?(\tTS:i:(\*|[!-~]+))?")?;
+    Ok((i, header.to_string()))
 }
 
 /// function that parse the header field
 fn parse_header(input: &str) -> IResult<&str, Header> {
-    let col = tag(":");
+    //let tab = tag("\t");
 
     // parse the first field of the header ({VN:Z:2.0})
-    let (i, _opt_tag) = terminated(tag("VN"), &col)(input)?;
-    let (i, _opt_type) = terminated(tag("Z"), &col)(i)?;
-    let (i, version) = re_find!(i, r"2.0")?;
+    let (i, version) = parse_header_tag(input)?;
 
-    // parse the second field of the header ({TS:i:<trace spacing>})
-    /* 
-    let (i, _opt_tag) = terminated(tag("TS"), &col)(input)?;
-    let (i, _opt_type) = terminated(tag("i"), &col)(i)?;
-    let (i, _trace) = re_find!(i, r"")?;
-    */
+    let result = Header {
+        version: version,
+    };
 
-    Ok((
-        i,
-        Header {
-            version: version.to_string(),
-        },
-    ))
+    Ok((i, result))
 }
 
 /// function that parse the segment field
@@ -203,36 +191,34 @@ fn parse_ogroup(input: &str) -> IResult<&str, Group> {
     let tab = tag("\t");
 
     let (i, id) = terminated(parse_opt_id, &tab)(input)?;
-     // technically the group field has a part with a needed item and then multiple 
-    // optional item, I don't think this kind of control can cover all the cases but
-    // for now it's ok
-    let (i, var_field) = parse_ref(i)?;
+    let (i, var_field) = parse_id(i)?;
+    let value_var = var_field.split_terminator(" ").map(String::from).collect();    
     
     let result = Group {
         id: id,
-        var_field: var_field,
+        var_field: value_var,
     };
 
     Ok((i, result))
 }
 
+/// function that parse the group field
 fn parse_ugroup(input: &str) -> IResult<&str, Group> {
     let tab = tag("\t");
 
     let (i, id) = terminated(parse_opt_id, &tab)(input)?;
-     // technically the group field has a part with a needed item and then multiple 
-    // optional item, I don't think this kind of control can cover all the cases but
-    // for now it's ok
     let (i, var_field) = parse_id(i)?;
+    let value_var = var_field.split_terminator(" ").map(String::from).collect();
     
     let result = Group {
         id: id,
-        var_field: var_field,
+        var_field: value_var,
     };
 
     Ok((i, result))
 }
 
+/// function that parses all the lines based on their prefix 
 fn parse_line(line: &str) -> IResult<&str, Line> {
     let (i, line_type) = terminated(one_of("HSFEGOU#"), tab)(line)?;
 
@@ -266,10 +252,11 @@ fn parse_line(line: &str) -> IResult<&str, Line> {
             let (i, u) = parse_ugroup(i)?;
             Ok((i, Line::Group(u)))
         }
-        _ => Ok((i, Line::Comment)), // ignore unrecognized headers to allow custom record
+        _ => Ok((i, Line::CustomRecord)), // ignore unrecognized headers to allow custom record
     }
 }
 
+/// function that parses a GFA2 file
 pub fn parse_gfa(path: &PathBuf) -> Option<GFA2> {
     let file = File::open(path).expect(&format!("Error opening file {:?}", path));
 
@@ -308,7 +295,33 @@ mod test {
     fn can_parse_header() {
         let hdr = "VN:Z:2.0";
         let hdr_ = Header {
-            version: "2.0".to_string(),
+            version: "VN:Z:2.0".to_string(),
+        };
+
+        match parse_header(hdr) {
+            Err(why) => panic!("{:?}", why),
+            Ok((res, h)) => assert_eq!(h, hdr_),
+        }
+    }
+
+    #[test]
+    fn can_parse_header_and_trace_space() {
+        let hdr = "VN:Z:2.0\tTS:i:*";
+        let hdr_ = Header {
+            version: "VN:Z:2.0\tTS:i:*".to_string(),
+        };
+
+        match parse_header(hdr) {
+            Err(why) => panic!("{:?}", why),
+            Ok((res, h)) => assert_eq!(h, hdr_),
+        }
+    }
+
+    #[test]
+    fn can_parse_blank_header() {
+        let hdr = "";
+        let hdr_ = Header {
+            version: "".to_string(),
         };
 
         match parse_header(hdr) {
@@ -330,23 +343,6 @@ mod test {
             Ok((res, s)) => assert_eq!(s, seg_),
         }
     }
-
-    // the tag element it's ignored but technically it
-    // should not being ignored 
-    // TODO: FIX DIS
-    #[test]
-    fn can_parse_tag_segment() {
-        let seg = "3\t21\tTGCAACGTATAGACTTGTCAC\tRC:i:4";
-        let seg_ = Segment {
-            id: "3".to_string(),
-            len: "21".to_string(),
-            sequence: "TGCAACGTATAGACTTGTCAC".to_string(),
-        };
-        match parse_segment(seg) {
-            Err(why) => panic!("{:?}", why),
-            Ok((res, s)) => assert_eq!(s, seg_),
-        }
-    }
     
     #[test]
     fn can_parse_fragment() {
@@ -362,7 +358,7 @@ mod test {
         };
         match parse_fragment(fragment) {
             Err(why) => panic!("{:?}", why),
-            Ok((res, s)) => assert_eq!(s, fragment_),
+            Ok((res, f)) => assert_eq!(f, fragment_),
         }
     }
 
@@ -405,15 +401,14 @@ mod test {
         }
     }
 
-    // the group_test cannot recognize the "vector part" of var field
-    // TODO: FIX DIS
     #[test]
     fn can_parse_o_group() {
-        let group = "2_to_12\t11+\t11_to_13+\t13+\txx:i:-1";
+        let group = "2_to_12\t11+ 11_to_13+ 13+\txx:i:-1";
 
         let group_ = Group {
             id: "2_to_12".to_string(),
-            var_field: "11+\t11_to_13+\t13+\txx:i:-1".to_string(),
+            var_field: vec!["11+".to_string(), "11_to_13+".to_string(), "13+".to_string()],
+            // tag: vec!["xx:i:-1".to_string()],
         };
 
         match parse_ogroup(group) {
@@ -424,11 +419,11 @@ mod test {
 
     #[test]
     fn can_parse_u_group() {
-        let group = "16sub\t2\t3";
+        let group = "16sub\t2 3";
 
         let group_ = Group {
             id: "16sub".to_string(),
-            var_field: "2\t3".to_string(),
+            var_field: vec!["2".to_string(), "3".to_string()],
         };
 
         match parse_ugroup(group) {
