@@ -1,628 +1,439 @@
-pub mod error;
+use nom::{
+    branch::alt,
+    bytes::complete::*,
+    character::complete::*,
+    combinator::map,
+    sequence::terminated,
+    IResult,
+};
+use std::{
+    fs::File,
+    io::prelude::*,
+    io::BufReader,
+    path::PathBuf,
+};
 
-pub use self::error::{GFAFieldResult, GFAResult, ParseError, ParseFieldError};
+use crate::gfa2::*;
 
-use bstr::{BStr, BString, ByteSlice};
-use lazy_static::lazy_static;
-use regex::bytes::Regex;
-
-use crate::{cigar::CIGAR, gfa2::*, optfields::*};
-
-use crate::parser::error::ParserTolerance;
-
-/// Builder struct for GFAParsers
-pub struct GFAParserBuilder {
-    pub segments: bool,
-    pub links: bool,
-    pub containments: bool,
-    pub paths: bool,
-    pub tolerance: ParserTolerance,
+/// function that parse the id tag (NOT OPTIONAL)
+fn parse_id(input: &str) -> IResult<&str, String> {
+    let (i, id) = re_find!(input, r"[!-~]+")?;
+    Ok((i, id.to_string()))
 }
 
-impl GFAParserBuilder {
-    /// Parse no GFA lines, useful if you only want to parse one line type.
-    pub fn none() -> Self {
-        GFAParserBuilder {
-            segments: false,
-            links: false,
-            containments: false,
-            paths: false,
-            tolerance: Default::default(),
+/// function that parse the id tag (OPTIONAL)
+fn parse_opt_id(input: &str) -> IResult<&str, String> {
+    let(i, opt_id) = re_find!(input, r"[!-~]+|\*")?;
+    Ok((i, opt_id.to_string()))
+}
+
+/// function that parse the ref tag
+fn parse_ref(input: &str) -> IResult<&str, String> {
+    let(i, ref_id) = re_find!(input, r"[!-~]+[+-]")?;
+    Ok((i, ref_id.to_string()))
+}
+
+/// function that parse the tag element (this field is optional)
+// not implemented yet
+fn parse_tag(input: &str) -> IResult<&str, String> {
+    let (i, seq) = re_find!(input, r"[A-Za-z0-9][A-Za-z0-9]:[ABHJZif]:[ -~]*")?;
+    Ok((i, seq.to_string()))
+}
+
+//function that parse the sequence element
+fn parse_sequence(input: &str) -> IResult<&str, String> {
+    let (i, seq) = re_find!(input, r"\*|[!-~]+")?;
+    Ok((i, seq.to_string()))
+}
+
+fn parse_alignment(input: &str) -> IResult<&str, String> {
+    // the alignment is composed of 3 choices: 
+    // * "empty"
+    // ([0-9]+[MDIP])+ CIGAR alignment
+    // \-?[0-9]+(,\-?[0-9]+)* trace alignment
+    // i'm not too sure if this regex will work or not
+    let (i, seq) = re_find!(input, r"\*|([0-9]+[MDIP])+|\-?[0-9]+(,\-?[0-9]+)*")?; 
+    Ok((i, seq.to_string()))
+}
+
+/// function that parse the pos tag
+fn parse_pos(input: &str) -> IResult<&str, String> {
+    let(i, pos) = re_find!(input, r"[!-~]+\$?")?;
+    Ok((i, pos.to_string()))
+}
+
+/// function that parse the int tag
+fn parse_int(input: &str) -> IResult<&str, String> {
+    let(i, int) = re_find!(input, r"\-?[0-9]+")?;
+    Ok((i, int.to_string()))
+}
+
+// idk if keep this function or not, probably not
+fn parse_orient(input: &str) -> IResult<&str, Orientation> {
+    let fwd = map(tag("+"), |_| Orientation::Forward);
+    let bkw = map(tag("-"), |_| Orientation::Backward);
+    alt((fwd, bkw))(input)
+}
+
+/// function that parse the header field
+fn parse_header(input: &str) -> IResult<&str, Header> {
+    let col = tag(":");
+
+    // parse the first field of the header ({VN:Z:2.0})
+    let (i, _opt_tag) = terminated(tag("VN"), &col)(input)?;
+    let (i, _opt_type) = terminated(tag("Z"), &col)(i)?;
+    let (i, version) = re_find!(i, r"2.0")?;
+
+    // parse the second field of the header ({TS:i:<trace spacing>})
+    /* 
+    let (i, _opt_tag) = terminated(tag("TS"), &col)(input)?;
+    let (i, _opt_type) = terminated(tag("i"), &col)(i)?;
+    let (i, _trace) = re_find!(i, r"")?;
+    */
+
+    Ok((
+        i,
+        Header {
+            version: version.to_string(),
+        },
+    ))
+}
+
+/// function that parse the segment field
+fn parse_segment(input: &str) -> IResult<&str, Segment> {
+    let tab = tag("\t");
+
+    let (i, id) = terminated(parse_id, &tab)(input)?;
+    let (i, len) = terminated(parse_int, &tab)(i)?;
+    let (i, seq) = parse_sequence(i)?;
+
+    let result = Segment {
+        id: id,
+        len: len,
+        sequence: seq,
+    };
+
+    Ok((i, result))
+}
+
+/// function that parse the fragment field
+fn parse_fragment(input: &str) -> IResult<&str, Fragment> {
+    let tab = tag("\t");
+
+    let (i, id) = terminated(parse_id, &tab)(input)?;
+    let (i, ref_id) = terminated(parse_ref, &tab)(i)?;
+
+    // probably using a loop is better
+    let (i, sbeg) = terminated(parse_pos, &tab)(i)?;
+    let (i, send) = terminated(parse_pos, &tab)(i)?;
+    let (i, fbeg) = terminated(parse_pos, &tab)(i)?;
+    let (i, fend) = terminated(parse_pos, &tab)(i)?;
+
+    let (i, alignment) = parse_alignment(i)?;
+
+    let result = Fragment {
+        id: id,
+        ext_ref: ref_id,
+        sbeg: sbeg,
+        send: send,
+        fbeg: fbeg,
+        fend: fend,
+        alignment: alignment,
+    };
+
+    Ok((i, result))
+}
+
+fn parse_edge(input: &str) -> IResult<&str, Edge> {
+    let tab = tag("\t");
+
+    // let (i, _line_type) = terminated(tag("C"), &tab)(input)?;
+    let (i, id) = terminated(parse_opt_id, &tab)(input)?;
+    
+    let (i, sid1) = terminated(parse_ref, &tab)(i)?;
+    let (i, sid2) = terminated(parse_ref, &tab)(i)?;
+
+    // probably using a loop is better
+    let (i, beg1) = terminated(parse_pos, &tab)(i)?;
+    let (i, end1) = terminated(parse_pos, &tab)(i)?;
+    let (i, beg2) = terminated(parse_pos, &tab)(i)?;
+    let (i, end2) = terminated(parse_pos, &tab)(i)?;
+
+    let (i, alignment) = parse_alignment(i)?;
+
+    let result = Edge {
+        id: id,
+        sid1: sid1,
+        sid2: sid2,
+        beg1: beg1,
+        end1: end1,
+        beg2: beg2,
+        end2: end2,
+        alignment: alignment,
+    };
+
+    Ok((i, result))
+}
+
+/// function that parse the gap field
+fn parse_gap(input: &str) -> IResult<&str, Gap> {
+    let tab = tag("\t");
+
+    let (i, id) = terminated(parse_opt_id, &tab)(input)?;
+
+    let (i, sid1) = terminated(parse_ref, &tab)(i)?;
+    let (i, sid2) = terminated(parse_ref, &tab)(i)?;
+
+    let (i, dist) = terminated(parse_int, &tab)(i)?;
+    let (i, var) = parse_int(i)?;
+
+    let result = Gap {
+        id: id,
+        sid1: sid1,
+        sid2: sid2,
+        dist: dist,
+        var: var,
+    };
+
+    Ok((i, result))
+}
+
+/// function that parse the group field
+fn parse_ogroup(input: &str) -> IResult<&str, Group> {
+    let tab = tag("\t");
+
+    let (i, id) = terminated(parse_opt_id, &tab)(input)?;
+     // technically the group field has a part with a needed item and then multiple 
+    // optional item, I don't think this kind of control can cover all the cases but
+    // for now it's ok
+    let (i, var_field) = parse_ref(i)?;
+    
+    let result = Group {
+        id: id,
+        var_field: var_field,
+    };
+
+    Ok((i, result))
+}
+
+fn parse_ugroup(input: &str) -> IResult<&str, Group> {
+    let tab = tag("\t");
+
+    let (i, id) = terminated(parse_opt_id, &tab)(input)?;
+     // technically the group field has a part with a needed item and then multiple 
+    // optional item, I don't think this kind of control can cover all the cases but
+    // for now it's ok
+    let (i, var_field) = parse_id(i)?;
+    
+    let result = Group {
+        id: id,
+        var_field: var_field,
+    };
+
+    Ok((i, result))
+}
+
+fn parse_line(line: &str) -> IResult<&str, Line> {
+    let (i, line_type) = terminated(one_of("HSFEGOU#"), tab)(line)?;
+
+    match line_type {
+        'H' => {
+            let (i, h) = parse_header(i)?;
+            Ok((i, Line::Header(h)))
+        }
+        '#' => Ok((i, Line::Comment)),
+        'S' => {
+            let (i, s) = parse_segment(i)?;
+            Ok((i, Line::Segment(s)))
+        }
+        'F' => {
+            let (i, f) = parse_fragment(i)?;
+            Ok((i, Line::Fragment(f)))
+        }
+        'E' => {
+            let (i, e) = parse_edge(i)?;
+            Ok((i, Line::Edge(e)))
+        }
+        'G' => {
+            let (i, g) = parse_gap(i)?;
+            Ok((i, Line::Gap(g)))
+        }
+        'O' => {
+            let (i, o) = parse_ogroup(i)?;
+            Ok((i, Line::Group(o)))
+        }
+        'U' => {
+            let (i, u) = parse_ugroup(i)?;
+            Ok((i, Line::Group(u)))
+        }
+        _ => Ok((i, Line::Comment)), // ignore unrecognized headers to allow custom record
+    }
+}
+
+pub fn parse_gfa(path: &PathBuf) -> Option<GFA2> {
+    let file = File::open(path).expect(&format!("Error opening file {:?}", path));
+
+    let reader = BufReader::new(file);
+    let lines = reader.lines();
+
+    let mut gfa = GFA2::new();
+
+    for line in lines {
+        let l = line.expect("Error parsing file");
+        let p = parse_line(&l);
+
+        if let Ok((_, Line::Header(h))) = p {
+            gfa.headers.push(h);
+        } else if let Ok((_, Line::Segment(s))) = p {
+            gfa.segments.push(s);
+        } else if let Ok((_, Line::Fragment(f))) = p {
+            gfa.fragments.push(f);
+        } else if let Ok((_, Line::Edge(e))) = p {
+            gfa.edges.push(e);
+        } else if let Ok((_, Line::Gap(g))) = p {
+            gfa.gaps.push(g);
+        } else if let Ok((_, Line::Group(ou))) = p {
+            gfa.groups.push(ou)
         }
     }
 
-    /// Parse all GFA lines.
-    pub fn all() -> Self {
-        GFAParserBuilder {
-            segments: true,
-            links: true,
-            containments: true,
-            paths: true,
-            tolerance: Default::default(),
-        }
-    }
-
-    pub fn ignore_errors(mut self) -> Self {
-        self.tolerance = ParserTolerance::IgnoreAll;
-        self
-    }
-
-    pub fn ignore_safe_errors(mut self) -> Self {
-        self.tolerance = ParserTolerance::Safe;
-        self
-    }
-
-    pub fn pedantic_errors(mut self) -> Self {
-        self.tolerance = ParserTolerance::Pedantic;
-        self
-    }
-
-    pub fn build<N: SegmentId, T: OptFields>(self) -> GFAParser<N, T> {
-        GFAParser {
-            segments: self.segments,
-            links: self.links,
-            containments: self.containments,
-            paths: self.paths,
-            tolerance: self.tolerance,
-            _optional_fields: std::marker::PhantomData,
-            _segment_names: std::marker::PhantomData,
-        }
-    }
-
-    pub fn build_usize_id<T: OptFields>(self) -> GFAParser<usize, T> {
-        self.build()
-    }
-
-    pub fn build_bstr_id<T: OptFields>(self) -> GFAParser<BString, T> {
-        self.build()
-    }
-}
-
-#[derive(Clone)]
-pub struct GFAParser<N: SegmentId, T: OptFields> {
-    segments: bool,
-    links: bool,
-    containments: bool,
-    paths: bool,
-    tolerance: ParserTolerance,
-    _optional_fields: std::marker::PhantomData<T>,
-    _segment_names: std::marker::PhantomData<N>,
-}
-
-impl<N: SegmentId, T: OptFields> Default for GFAParser<N, T> {
-    fn default() -> Self {
-        let config = GFAParserBuilder::all();
-        config.build()
-    }
-}
-
-impl<N: SegmentId, T: OptFields> GFAParser<N, T> {
-    /// Create a new GFAParser that will parse all four GFA line
-    /// types, and use the optional fields parser and storage `T`.
-    pub fn new() -> Self {
-        Default::default()
-    }
-
-    pub fn parse_gfa_line(&self, bytes: &[u8]) -> GFAResult<Line<N, T>> {
-        let line: &BStr = bytes.trim().as_ref();
-
-        let mut fields = line.split_str(b"\t");
-        let hdr = fields.next().ok_or(ParseError::EmptyLine)?;
-
-        let invalid_line =
-            |e: ParseFieldError| ParseError::invalid_line(e, bytes);
-
-        let line = match hdr {
-            b"H" => Header::parse_line(fields).map(Header::wrap),
-            b"S" if self.segments => {
-                Segment::parse_line(fields).map(Segment::wrap)
-            }
-            b"L" if self.links => Link::parse_line(fields).map(Link::wrap),
-            b"C" if self.containments => {
-                Containment::parse_line(fields).map(Containment::wrap)
-            }
-            b"P" if self.paths => Path::parse_line(fields).map(Path::wrap),
-            _ => return Err(ParseError::UnknownLineType),
-        }
-        .map_err(invalid_line)?;
-        Ok(line)
-    }
-
-    pub fn parse_lines<I>(&self, lines: I) -> GFAResult<GFA<N, T>>
-    where
-        I: Iterator,
-        I::Item: AsRef<[u8]>,
-    {
-        let mut gfa = GFA::new();
-
-        for line in lines {
-            match self.parse_gfa_line(line.as_ref()) {
-                Ok(parsed) => gfa.insert_line(parsed),
-                Err(err) if err.can_safely_continue(&self.tolerance) => (),
-                Err(err) => return Err(err),
-            };
-        }
-
-        Ok(gfa)
-    }
-
-    pub fn parse_file<P: AsRef<std::path::Path>>(
-        &self,
-        path: P,
-    ) -> Result<GFA<N, T>, ParseError> {
-        use {
-            bstr::io::BufReadExt,
-            std::{fs::File, io::BufReader},
-        };
-
-        let file = File::open(path)?;
-        let lines = BufReader::new(file).byte_lines();
-
-        let mut gfa = GFA::new();
-
-        for line in lines {
-            let line = line?;
-            match self.parse_gfa_line(line.as_ref()) {
-                Ok(parsed) => gfa.insert_line(parsed),
-                Err(err) if err.can_safely_continue(&self.tolerance) => (),
-                Err(err) => return Err(err),
-            };
-        }
-
-        Ok(gfa)
-    }
-}
-
-pub struct GFAParserLineIter<I, N, T>
-where
-    N: SegmentId,
-    T: OptFields,
-    I: Iterator,
-    I::Item: AsRef<[u8]>,
-{
-    parser: GFAParser<N, T>,
-    iter: I,
-}
-
-impl<I, N, T> GFAParserLineIter<I, N, T>
-where
-    N: SegmentId,
-    T: OptFields,
-    I: Iterator,
-    I::Item: AsRef<[u8]>,
-{
-    pub fn from_parser(parser: GFAParser<N, T>, iter: I) -> Self {
-        Self { parser, iter }
-    }
-}
-
-impl<I, N, T> Iterator for GFAParserLineIter<I, N, T>
-where
-    N: SegmentId,
-    T: OptFields,
-    I: Iterator,
-    I::Item: AsRef<[u8]>,
-{
-    type Item = GFAResult<Line<N, T>>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let next_line = self.iter.next()?;
-        let result = self.parser.parse_gfa_line(next_line.as_ref());
-        Some(result)
-    }
-}
-
-impl<I, N, T> std::iter::FusedIterator for GFAParserLineIter<I, N, T>
-where
-    N: SegmentId,
-    T: OptFields,
-    I: Iterator,
-    I::Item: AsRef<[u8]>,
-{
-}
-
-fn next_field<I, P>(mut input: I) -> GFAFieldResult<P>
-where
-    I: Iterator<Item = P>,
-    P: AsRef<[u8]>,
-{
-    input.next().ok_or(ParseFieldError::MissingFields)
-}
-
-fn parse_orientation<I>(mut input: I) -> GFAFieldResult<Orientation>
-where
-    I: Iterator,
-    I::Item: AsRef<[u8]>,
-{
-    let next = next_field(&mut input)?;
-    let parsed = Orientation::from_bytes_plus_minus(next.as_ref());
-    Orientation::parse_error(parsed)
-}
-
-impl<T: OptFields> Header<T> {
-    #[inline]
-    fn wrap<N: SegmentId>(self) -> Line<N, T> {
-        Line::Header(self)
-    }
-
-    #[inline]
-    fn parse_line<I>(mut input: I) -> GFAFieldResult<Self>
-    where
-        I: Iterator,
-        I::Item: AsRef<[u8]>,
-    {
-        let next = next_field(&mut input)?;
-        let version = OptField::parse(next.as_ref());
-        let version =
-            if let Some(OptFieldVal::Z(version)) = version.map(|v| v.value) {
-                Some(version)
-            } else {
-                None
-            };
-
-        let optional = T::parse(input);
-
-        Ok(Header { version, optional })
-    }
-}
-
-fn parse_sequence<I>(input: &mut I) -> GFAFieldResult<BString>
-where
-    I: Iterator,
-    I::Item: AsRef<[u8]>,
-{
-    lazy_static! {
-        static ref RE: Regex = Regex::new(r"(?-u)\*|[A-Za-z=.]+").unwrap();
-    }
-
-    let next = next_field(input)?;
-    RE.find(next.as_ref())
-        .map(|s| BString::from(s.as_bytes()))
-        .ok_or(ParseFieldError::InvalidField("Sequence"))
-}
-
-impl<N: SegmentId, T: OptFields> Segment<N, T> {
-    #[inline]
-    fn wrap(self) -> Line<N, T> {
-        Line::Segment(self)
-    }
-
-    #[inline]
-    fn parse_line<I>(mut input: I) -> GFAFieldResult<Self>
-    where
-        I: Iterator,
-        I::Item: AsRef<[u8]>,
-    {
-        let name = N::parse_next(&mut input)?;
-        let sequence = parse_sequence(&mut input)?;
-        let optional = T::parse(input);
-        Ok(Segment {
-            name,
-            sequence,
-            optional,
-        })
-    }
-}
-
-impl<N: SegmentId, T: OptFields> Link<N, T> {
-    #[inline]
-    fn wrap(self) -> Line<N, T> {
-        Line::Link(self)
-    }
-
-    #[inline]
-    fn parse_line<I>(mut input: I) -> GFAFieldResult<Self>
-    where
-        I: Iterator,
-        I::Item: AsRef<[u8]>,
-    {
-        let from_segment = N::parse_next(&mut input)?;
-        let from_orient = parse_orientation(&mut input)?;
-        let to_segment = N::parse_next(&mut input)?;
-        let to_orient = parse_orientation(&mut input)?;
-
-        let overlap = next_field(&mut input)?.as_ref().into();
-
-        let optional = T::parse(input);
-        Ok(Link {
-            from_segment,
-            from_orient,
-            to_segment,
-            to_orient,
-            overlap,
-            optional,
-        })
-    }
-}
-
-impl<N: SegmentId, T: OptFields> Containment<N, T> {
-    #[inline]
-    fn wrap(self) -> Line<N, T> {
-        Line::Containment(self)
-    }
-
-    #[inline]
-    fn parse_line<I>(mut input: I) -> GFAFieldResult<Self>
-    where
-        I: Iterator,
-        I::Item: AsRef<[u8]>,
-    {
-        let container_name = N::parse_next(&mut input)?;
-        let container_orient = parse_orientation(&mut input)?;
-
-        let contained_name = N::parse_next(&mut input)?;
-        let contained_orient = parse_orientation(&mut input)?;
-
-        let pos = next_field(&mut input)?;
-        let pos = pos.as_ref().to_str()?.parse()?;
-
-        let overlap = next_field(&mut input)?.as_ref().into();
-
-        let optional = T::parse(input);
-
-        Ok(Containment {
-            container_name,
-            container_orient,
-            contained_name,
-            contained_orient,
-            overlap,
-            pos,
-            optional,
-        })
-    }
-}
-
-impl<N: SegmentId, T: OptFields> Path<N, T> {
-    #[inline]
-    fn wrap(self) -> Line<N, T> {
-        Line::Path(self)
-    }
-
-    #[inline]
-    fn parse_line<I>(mut input: I) -> GFAFieldResult<Self>
-    where
-        I: Iterator,
-        I::Item: AsRef<[u8]>,
-    {
-        // Use the SegmentId parser for the path name as well; it's
-        // just always BString
-        let path_name = BString::parse_next(&mut input)?;
-
-        let segment_names =
-            next_field(&mut input).map(|bs| BString::from(bs.as_ref()))?;
-
-        let overlaps = next_field(&mut input)?
-            .as_ref()
-            .split_str(b",")
-            .map(|bs| {
-                if bs == b"*" {
-                    None
-                } else {
-                    CIGAR::from_bytestring(bs)
-                }
-            })
-            .collect();
-
-        /*
-        // special case for throwing away the *s if all overlaps are *
-        // faster but will require some more logic in the Path
-        // interface, so I'm sticking to the other one for now
-
-        let overlaps = next_field(&mut input)?;
-        let overlaps = overlaps
-            .as_ref()
-            .split_str(b",")
-            // .map(BString::from)
-            .map(|bs| {
-                if bs == b"*" {
-                    None
-                } else {
-                    CIGAR::from_bytestring(bs)
-                }
-            });
-
-        let (overlaps, none): (Vec<_>, Vec<_>) =
-            overlaps.partition(|x| x.is_some());
-        let overlaps = if overlaps.is_empty() { none } else { overlaps };
-        */
-        // .collect();
-
-        let optional = T::parse(input);
-
-        Ok(Path::new(path_name, segment_names, overlaps, optional))
-    }
+    Some(gfa)
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
+mod test {
+    use crate::parser::*;
 
     #[test]
     fn can_parse_header() {
-        let hdr = b"VN:Z:1.0";
+        let hdr = "VN:Z:2.0";
         let hdr_ = Header {
-            version: Some("1.0".into()),
-            optional: (),
+            version: "2.0".to_string(),
         };
 
-        let result: GFAFieldResult<Header<()>> =
-            Header::parse_line([hdr].iter());
-
-        match result {
-            Err(_) => {
-                panic!("Error parsing header");
-            }
-            Ok(h) => assert_eq!(h, hdr_),
+        match parse_header(hdr) {
+            Err(why) => panic!("{:?}", why),
+            Ok((res, h)) => assert_eq!(h, hdr_),
         }
     }
 
     #[test]
-    fn can_parse_link() {
-        let link = "11	+	12	-	4M";
-        let link_: Link<BString, ()> = Link {
-            from_segment: "11".into(),
-            from_orient: Orientation::Forward,
-            to_segment: "12".into(),
-            to_orient: Orientation::Backward,
-            overlap: "4M".into(),
-            optional: (),
+    fn can_parse_segment() {
+        let seg = "A\t10\tAAAAAAACGT";
+        let seg_ = Segment {
+            id: "A".to_string(),
+            len: "10".to_string(),
+            sequence: "AAAAAAACGT".to_string(),
         };
+        match parse_segment(seg) {
+            Err(why) => panic!("{:?}", why),
+            Ok((res, s)) => assert_eq!(s, seg_),
+        }
+    }
 
-        let fields = link.split_terminator('\t');
-        let result = Link::parse_line(fields);
-
-        match result {
-            Err(_) => {
-                panic!("Error parsing link");
-            }
-            Ok(l) => assert_eq!(l, link_),
+    // the tag element it's ignored but technically it
+    // should not being ignored 
+    // TODO: FIX DIS
+    #[test]
+    fn can_parse_tag_segment() {
+        let seg = "3\t21\tTGCAACGTATAGACTTGTCAC\tRC:i:4";
+        let seg_ = Segment {
+            id: "3".to_string(),
+            len: "21".to_string(),
+            sequence: "TGCAACGTATAGACTTGTCAC".to_string(),
+        };
+        match parse_segment(seg) {
+            Err(why) => panic!("{:?}", why),
+            Ok((res, s)) => assert_eq!(s, seg_),
+        }
+    }
+    
+    #[test]
+    fn can_parse_fragment() {
+        let fragment = "12\t1-\t0\t140$\t0\t140\t11M";
+        let fragment_ = Fragment {
+            id: "12".to_string(),
+            ext_ref: "1-".to_string(),
+            sbeg: "0".to_string(),
+            send: "140$".to_string(),
+            fbeg: "0".to_string(),
+            fend: "140".to_string(),
+            alignment: "11M".to_string(),
+        };
+        match parse_fragment(fragment) {
+            Err(why) => panic!("{:?}", why),
+            Ok((res, s)) => assert_eq!(s, fragment_),
         }
     }
 
     #[test]
-    fn can_parse_containment() {
-        let cont = "1\t-\t2\t+\t110\t100M";
+    fn can_parse_edge() {
+        let edge = "*\t3+\t65-\t5329\t5376$\t20\t67$\t47M";
 
-        let cont_: Containment<BString, _> = Containment {
-            container_name: "1".into(),
-            container_orient: Orientation::Backward,
-            contained_name: "2".into(),
-            contained_orient: Orientation::Forward,
-            overlap: "100M".into(),
-            pos: 110,
-            optional: (),
+        let edge_ = Edge {
+            id: "*".to_string(),
+            sid1: "3+".to_string(),
+            sid2: "65-".to_string(),
+            beg1: "5329".to_string(),
+            end1: "5376$".to_string(),
+            beg2: "20".to_string(),
+            end2: "67$".to_string(),
+            alignment: "47M".to_string(),
         };
 
-        let fields = cont.split_terminator('\t');
-        let result = Containment::parse_line(fields);
-        match result {
-            Err(_) => {
-                panic!("Error parsing containment");
-            }
-            Ok(c) => assert_eq!(c, cont_),
+        match parse_edge(edge) {
+            Err(why) => panic!("{:?}", why),
+            Ok((res, e)) => assert_eq!(e, edge_),
         }
     }
 
     #[test]
-    fn can_parse_path() {
-        let path = "14\t11+,12-,13+\t4M,5M";
+    fn can_parse_gap() {
+        let gap = "2_to_12\t2-\t12+\t500\t50";
 
-        let cigars = vec![b"4M", b"5M"]
-            .iter()
-            .map(|bs| CIGAR::from_bytestring(&bs[..]))
-            .collect();
+        let gap_ = Gap {
+            id: "2_to_12".to_string(),
+            sid1: "2-".to_string(),
+            sid2: "12+".to_string(),
+            dist: "500".to_string(),
+            var: "50".to_string(),
+        };
 
-        let path_: Path<BString, _> =
-            Path::new("14".into(), "11+,12-,13+".into(), cigars, ());
+        match parse_gap(gap) {
+            Err(why) => panic!("{:?}", why),
+            Ok((res, g)) => assert_eq!(g, gap_),
+        }
+    }
 
-        let fields = path.split_terminator('\t');
+    // the group_test cannot recognize the "vector part" of var field
+    // TODO: FIX DIS
+    #[test]
+    fn can_parse_o_group() {
+        let group = "2_to_12\t11+\t11_to_13+\t13+\txx:i:-1";
 
-        let result = Path::parse_line(fields);
+        let group_ = Group {
+            id: "2_to_12".to_string(),
+            var_field: "11+\t11_to_13+\t13+\txx:i:-1".to_string(),
+        };
 
-        match result {
-            Err(_) => {
-                panic!("Error parsing path");
-            }
-            Ok(p) => assert_eq!(p, path_),
+        match parse_ogroup(group) {
+            Err(why) => panic!("{:?}", why),
+            Ok((res, o)) => assert_eq!(o, group_),
         }
     }
 
     #[test]
-    fn can_parse_gfa_lines() {
-        let parser = GFAParser::new();
-        let gfa: GFA<BString, ()> =
-            parser.parse_file(&"./test/gfas/lil.gfa").unwrap();
+    fn can_parse_u_group() {
+        let group = "16sub\t2\t3";
 
-        let num_segs = gfa.segments.len();
-        let num_links = gfa.links.len();
-        let num_paths = gfa.paths.len();
-        let num_conts = gfa.containments.len();
-
-        assert_eq!(num_segs, 15);
-        assert_eq!(num_links, 20);
-        assert_eq!(num_conts, 0);
-        assert_eq!(num_paths, 3);
-    }
-
-    #[test]
-    fn gfa_usize_parser_can_fail() {
-        let usize_parser: GFAParser<usize, OptionalFields> = GFAParser::new();
-        let usize_gfa = usize_parser.parse_file(&"./test/gfas/diatom.gfa");
-
-        assert!(usize_gfa.is_err());
-
-        let err = usize_gfa.unwrap_err();
-
-        assert!(matches!(
-            err,
-            ParseError::InvalidLine(ParseFieldError::UintIdError, _)
-        ));
-    }
-
-    #[test]
-    fn gfa_parser_line_iter() {
-        use {
-            bstr::io::BufReadExt,
-            std::{fs::File, io::BufReader},
+        let group_ = Group {
+            id: "16sub".to_string(),
+            var_field: "2\t3".to_string(),
         };
 
-        let parser: GFAParser<usize, ()> = GFAParser::new();
-        let file = File::open(&"./test/gfas/lil.gfa").unwrap();
-        let lines = BufReader::new(file).byte_lines().map(|x| x.unwrap());
-        let parser_iter = GFAParserLineIter::from_parser(parser, lines);
-
-        let segment_names = parser_iter
-            .filter_map(|line| {
-                let line = line.ok()?;
-                let seg = line.some_segment()?;
-
-                Some(seg.name)
-            })
-            .collect::<Vec<_>>();
-
-        assert_eq!(segment_names, (1..=15).into_iter().collect::<Vec<_>>());
-    }
-
-    #[test]
-    fn segment_parser() {
-        use OptFieldVal::*;
-        let name = "11";
-        let seq = "ACCTT";
-        let segment_bytes = "11\tACCTT\tLN:i:123\tSH:H:AACCFF05\tRC:i:123\tUR:Z:http://test.com/\tIJ:A:x\tAB:B:I1,2,3,52124";
-        let fields = segment_bytes.split_terminator('\t');
-
-        let optional_fields: Vec<_> = vec![
-            OptField::new(b"LN", Int(123)),
-            OptField::new(
-                b"SH",
-                H(vec![0xA, 0xA, 0xC, 0xC, 0xF, 0xF, 0x0, 0x5]),
-            ),
-            OptField::new(b"RC", Int(123)),
-            OptField::new(b"UR", Z(BString::from("http://test.com/"))),
-            OptField::new(b"IJ", A(b'x')),
-            OptField::new(b"AB", BInt(vec![1, 2, 3, 52124])),
-        ]
-        .into_iter()
-        .collect();
-
-        let segment_1: GFAFieldResult<Segment<BString, ()>> =
-            Segment::parse_line(fields.clone());
-
-        assert!(segment_1.is_ok());
-        assert_eq!(
-            Segment {
-                name: BString::from(name),
-                sequence: BString::from(seq),
-                optional: ()
-            },
-            segment_1.unwrap(),
-        );
-
-        let segment_2: Segment<BString, OptionalFields> =
-            Segment::parse_line(fields).unwrap();
-
-        assert_eq!(segment_2.name, name);
-        assert_eq!(segment_2.sequence, seq);
-        assert_eq!(segment_2.optional, optional_fields);
+        match parse_ugroup(group) {
+            Err(why) => panic!("{:?}", why),
+            Ok((res, u)) => assert_eq!(u, group_),
+        }
     }
 }
