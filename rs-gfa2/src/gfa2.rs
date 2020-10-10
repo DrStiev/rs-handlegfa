@@ -44,7 +44,9 @@ pub struct GFA2<N, T:OptFields> {
 
     // Alignmens can be trace length [https://dazzlerblog.wordpress.com/2015/11/05/trace-points/]
     // as well as CIGAR [https://samtools.github.io/hts-specs/SAMv1.pdf] strings
-    
+    // IMPORTANT! right now it's only possible to parse CIGAR alignment
+    // trace length alignment will be added asap
+
     // Positions have been extended to include postfix $ symbol 
     // for positions representing the end of a read
 
@@ -251,8 +253,8 @@ impl<T: OptFields> Fragment<BString, T> {
 #[derive(Default, Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize, Hash)]
 pub struct Edge<N, T:OptFields> {
     pub id: BString,
-    pub s_id1: BString,
-    pub s_id2: BString,
+    pub s_id1: BString, // orientation (+-) needed
+    pub s_id2: BString, // orientation (+-) needed
     pub beg1: N,
     pub end1: BString,
     pub beg2: N,
@@ -290,8 +292,8 @@ impl<T: OptFields> Edge<BString, T> {
 #[derive(Default, Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize, Hash)]
 pub struct Gap<N, T:OptFields> {
     pub id: N,
-    pub s_id1: BString,
-    pub s_id2: BString,
+    pub s_id1: BString, // orientation (+-) needed
+    pub s_id2: BString, // orientation (+-) needed
     pub dist: BString,
     pub var: BString, // i'm not so sure about this field
     pub tag: Vec<T>,
@@ -320,9 +322,12 @@ impl<T: OptFields> Gap<BString, T> {
 /// The new U- and O-lines replace the P-lines
 #[derive(Default, Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize, Hash)]
 pub struct Group<N, T: OptFields> {
+    // nested structs are NOT supported by rust so, it's better to define the common
+    // parts as part of the Group struct and then define the "specialized" part of the 
+    // o- and U-groups as separate structs
     pub id: N,
-    pub ref_id: BString,
-    pub ref_id_content: Vec<Option<BString>>,
+    pub ref_id: BString, // orientation (+-) needed only in O-Group
+    pub ref_id_content: Vec<Option<BString>>, // orientation (+-) needed only in O-Group
     pub tag: Vec<T>,
 }
 

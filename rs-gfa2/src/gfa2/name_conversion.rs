@@ -1,5 +1,5 @@
 use crate::{
-    gfa2::{Containment, Link, Path, Segment, GFA2},
+    gfa2::*,
     optfields::*,
 };
 
@@ -14,7 +14,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-fn hash_gfa<T: OptFields>(gfa: &GFA<BString, T>) -> u64 {
+fn hash_gfa<T: OptFields>(gfa: &GFA2<BString, T>) -> u64 {
     let mut hasher = DefaultHasher::new();
 
     for seg in gfa.segments.iter() {
