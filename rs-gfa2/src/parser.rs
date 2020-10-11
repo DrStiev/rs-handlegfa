@@ -13,39 +13,37 @@ use std::{
 
 use crate::gfa2::*;
 
-/// function that parse the id tag (NOT OPTIONAL)
-/// add the vector part
+/// function that parses the id tag (added the optional vector part)
 fn parse_id(input: &str) -> IResult<&str, String> {
     let (i, id) = re_find!(input, r"[!-~]+([ ][!-~]+)*")?;
     Ok((i, id.to_string()))
 }
 
-/// function that parse the id tag (OPTIONAL)
+/// function that parses the optional id tag
 fn parse_opt_id(input: &str) -> IResult<&str, String> {
     let(i, opt_id) = re_find!(input, r"[!-~]+|\*")?;
     Ok((i, opt_id.to_string()))
 }
 
-/// function that parse the ref tag
-/// /// add the vector part
+/// function that parses the ref tag (added the optional vector part)
 fn parse_ref(input: &str) -> IResult<&str, String> {
     let(i, ref_id) = re_find!(input, r"[!-~]+[+-]([ ][!-~]+[+-])*")?;
     Ok((i, ref_id.to_string()))
 }
 
-/// function that parse the tag element (this field is optional)
-// not implemented yet
+/// function that parses the tag element (this field is optional)
 fn parse_tag(input: &str) -> IResult<&str, String> {
     let (i, seq) = re_find!(input, r"(\t[A-Za-z0-9][A-Za-z0-9]:[ABHJZif]:[ -~]*)*")?;
     Ok((i, seq.to_string()))
 }
 
-//function that parse the sequence element
+/// function that parses the sequence element
 fn parse_sequence(input: &str) -> IResult<&str, String> {
     let (i, seq) = re_find!(input, r"\*|[!-~]+")?;
     Ok((i, seq.to_string()))
 }
 
+/// funtion that parses the alignment element
 fn parse_alignment(input: &str) -> IResult<&str, String> {
     // the alignment is composed of 3 choices: 
     // * "empty"
@@ -55,31 +53,31 @@ fn parse_alignment(input: &str) -> IResult<&str, String> {
     Ok((i, seq.to_string()))
 }
 
-/// function that parse the pos tag
+/// function that parses the pos tag
 fn parse_pos(input: &str) -> IResult<&str, String> {
     let(i, pos) = re_find!(input, r"[!-~]+\$?")?;
     Ok((i, pos.to_string()))
 }
 
-/// function that parse the int tag
+/// function that parses the int tag
 fn parse_int(input: &str) -> IResult<&str, String> {
     let(i, int) = re_find!(input, r"\-?[0-9]+")?;
     Ok((i, int.to_string()))
 }
 
-/// function that parse the var tag (similar to the int tag)
+/// function that parses the var tag (similar to the int tag)
 fn parse_var(input: &str) -> IResult<&str, String> {
     let(i, int) = re_find!(input, r"\*|\-?[0-9]+")?;
     Ok((i, int.to_string()))
 }
 
-/// function that parse the first (and second) field of the header tag
+/// function that parses the first (and second) field of the header tag
 fn parse_header_tag(input: &str) -> IResult<&str, String> {
     let(i, header) = re_find!(input, r"(VN:Z:2.0)?(\tTS:i:(\*|[!-~]+))?")?;
     Ok((i, header.to_string()))
 }
 
-/// function that parse the header field
+/// function that parses the header field
 fn parse_header(input: &str) -> IResult<&str, Header> {
     let (i, version) = parse_header_tag(input)?;
 
@@ -95,7 +93,7 @@ fn parse_header(input: &str) -> IResult<&str, Header> {
     Ok((i, result))
 }
 
-/// function that parse the segment field
+/// function that parses the segment field
 fn parse_segment(input: &str) -> IResult<&str, Segment> {
     let tab = tag("\t");
 
@@ -117,7 +115,7 @@ fn parse_segment(input: &str) -> IResult<&str, Segment> {
     Ok((i, result))
 }
 
-/// function that parse the fragment field
+/// function that parses the fragment field
 fn parse_fragment(input: &str) -> IResult<&str, Fragment> {
     let tab = tag("\t");
 
@@ -186,7 +184,7 @@ fn parse_edge(input: &str) -> IResult<&str, Edge> {
     Ok((i, result))
 }
 
-/// function that parse the gap field
+/// function that parses the gap field
 fn parse_gap(input: &str) -> IResult<&str, Gap> {
     let tab = tag("\t");
 
@@ -214,7 +212,7 @@ fn parse_gap(input: &str) -> IResult<&str, Gap> {
     Ok((i, result))
 }
 
-/// function that parse the group field
+/// function that parses the group field
 fn parse_ogroup(input: &str) -> IResult<&str, Group> {
     let tab = tag("\t");
 
@@ -235,7 +233,7 @@ fn parse_ogroup(input: &str) -> IResult<&str, Group> {
     Ok((i, result))
 }
 
-/// function that parse the group field
+/// function that parses the group field
 fn parse_ugroup(input: &str) -> IResult<&str, Group> {
     let tab = tag("\t");
 
@@ -290,7 +288,7 @@ fn parse_line(line: &str) -> IResult<&str, Line> {
             let (i, u) = parse_ugroup(i)?;
             Ok((i, Line::Group(u)))
         }
-        _ => Ok((i, Line::CustomRecord)), // ignore unrecognized headers to allow custom record
+        _ => Ok((i, Line::CustomRecord)), // ignore unrecognized prefix to allow custom record
     }
 }
 
@@ -448,7 +446,7 @@ mod test {
     }
 
     #[test]
-    fn can_parse_gap2() {
+    fn can_parse_gap_with_empty_var() {
         let gap = "g1\t7+\t22+\t10\t*";
 
         let gap_ = Gap {

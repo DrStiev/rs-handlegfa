@@ -9,6 +9,7 @@ pub struct Header {
     pub version: String,
     pub tag: Vec<String>,
 }
+
 impl Header {
     pub fn new(version: &str, tag: Vec<&str>) -> Header {
         Header {
@@ -59,8 +60,7 @@ pub struct Fragment {
     pub send: String, // dollar character as optional final char
     pub fbeg: String,
     pub fend: String,
-    // alignment field can be *, trace or CIGAR
-    pub alignment: String, 
+    pub alignment: String, // alignment field can be *, trace or CIGAR 
     pub tag: Vec<String>,
 }
 
@@ -116,7 +116,7 @@ impl Fragment {
 /// beg1 = 0 and end2 = y$ or beg2 = 0 and end1 = x$ (if the aligned segments are in the same orientation)
 /// beg1 = 0 and beg2 = 0 or end1 = x$ and end2 = y$ (if the aligned segments are in opposite orientation)
 /// while GFA containment is modeled by the case where either beg1 = 0 and end1 = x$ or beg2 = 0 and end2 = x$.
-/// ![Edge representation](https://github.com/GFA-spec/GFA-spec/blob/master/images/GFA2.Fig1.png)
+/// ![Edge representation](https://github.com/GFA-spec/GFA-spec/blob/master/images/GFA2.Fig1.png) 
 /// Special codes could be adopted for dovetail and containment relationships but the thought is 
 /// there is no particular reason to do so, the use of the $ sentinel for terminal positions makes their identification 
 /// simple both algorithmically and visually, and the more general scenario allows interesting possibilities. 
@@ -124,7 +124,7 @@ impl Fragment {
 /// and then in a next phase choose a path through the bubbles as the primary “contig”, 
 /// and then capture the two bubble alternatives as a vertex linked with generalized edges shown in the “After” picture. 
 /// Note carefully that you need a generalized edge to capture the attachment of the two haplotype bubbles in the “After” picture.
-/// ![Edge representation 2](https://github.com/GFA-spec/GFA-spec/blob/master/images/GFA2.Fig2.png)
+/// ![Edge representation 2](https://github.com/GFA-spec/GFA-spec/blob/master/images/GFA2.Fig2.png) 
 /// While one has graphs in which vertex sequences actually overlap as above, one also frequently encounters models 
 /// in which there is no overlap (basically edge-labelled models captured in a vertex-labelled form). 
 /// This is captured by edges for which
@@ -138,7 +138,7 @@ pub struct Edge {
     pub end1: String, // dollar character as optional final char
     pub beg2: String,
     pub end2: String, // dollar character as optional final char
-    pub alignment: String,
+    pub alignment: String, // alignment field can be *, trace or CIGAR
     pub tag: Vec<String>,
 }
 
@@ -233,7 +233,7 @@ impl Gap {
 pub struct Group {
     pub id: String, // optional id, can be either * or id tag
     pub var_field: Vec<String>, // variable field, O-Group have this as optional tag
-                    // instead U-Group have dis as normal tag   
+                                // instead U-Group have dis as normal tag   
     pub tag: Vec<String>,  
 }
 
@@ -247,6 +247,18 @@ impl Group {
             tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub enum Line {
+    Header(Header),
+    Segment(Segment),
+    Fragment(Fragment),
+    Edge(Edge),
+    Gap(Gap),
+    Group(Group),
+    Comment,
+    CustomRecord,
 }
 
 /// Like GFA, GFA2 is tab-delimited in that every lexical token is separated from the next by a single tab.
@@ -265,19 +277,8 @@ impl Group {
 /// Moreover, almost all references to identifiers are oriented, by virtue of a post-fix + or - sign. 
 /// A +-sign indicates the object is in the orientation it was defined, and a --sign indicates it should be reverse-complemented.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub enum Line {
-    Header(Header),
-    Segment(Segment),
-    Fragment(Fragment),
-    Edge(Edge),
-    Gap(Gap),
-    Group(Group),
-    Comment,
-    CustomRecord,
-}
-
 // struct to hold the results of parsing a file; not actually a graph
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+// TODO: implement an handlegraph to hold the result of parsing a GFA2 file
 pub struct GFA2 {
     pub headers: Vec<Header>,
     pub segments: Vec<Segment>,
