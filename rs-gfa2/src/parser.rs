@@ -36,7 +36,7 @@ fn parse_ref(input: &str) -> IResult<&str, String> {
 /// function that parse the tag element (this field is optional)
 // not implemented yet
 fn parse_tag(input: &str) -> IResult<&str, String> {
-    let (i, seq) = re_find!(input, r"([A-Za-z0-9][A-Za-z0-9]:[ABHJZif]:[ -~]*)*")?;
+    let (i, seq) = re_find!(input, r"(\t[A-Za-z0-9][A-Za-z0-9]:[ABHJZif]:[ -~]*)*")?;
     Ok((i, seq.to_string()))
 }
 
@@ -67,6 +67,12 @@ fn parse_int(input: &str) -> IResult<&str, String> {
     Ok((i, int.to_string()))
 }
 
+/// function that parse the var tag (similar to the int tag)
+fn parse_var(input: &str) -> IResult<&str, String> {
+    let(i, int) = re_find!(input, r"\*|\-?[0-9]+")?;
+    Ok((i, int.to_string()))
+}
+
 /// function that parse the first (and second) field of the header tag
 fn parse_header_tag(input: &str) -> IResult<&str, String> {
     let(i, header) = re_find!(input, r"(VN:Z:2.0)?(\tTS:i:(\*|[!-~]+))?")?;
@@ -75,13 +81,15 @@ fn parse_header_tag(input: &str) -> IResult<&str, String> {
 
 /// function that parse the header field
 fn parse_header(input: &str) -> IResult<&str, Header> {
-    //let tab = tag("\t");
-
-    // parse the first field of the header ({VN:Z:2.0})
     let (i, version) = parse_header_tag(input)?;
+
+    let (i, tag) = parse_tag(i)?;
+    let mut tag_value: Vec<String> = tag.split_terminator("\t").map(String::from).collect();
+    tag_value.retain(|tag| !tag.is_empty());
 
     let result = Header {
         version: version,
+        tag: tag_value,
     };
 
     Ok((i, result))
@@ -95,10 +103,15 @@ fn parse_segment(input: &str) -> IResult<&str, Segment> {
     let (i, len) = terminated(parse_int, &tab)(i)?;
     let (i, seq) = parse_sequence(i)?;
 
+   let (i, tag) = parse_tag(i)?;
+   let mut tag_value: Vec<String> = tag.split_terminator("\t").map(String::from).collect();
+   tag_value.retain(|tag| !tag.is_empty());
+
     let result = Segment {
         id: id,
         len: len,
         sequence: seq,
+        tag: tag_value,
     };
 
     Ok((i, result))
@@ -119,6 +132,10 @@ fn parse_fragment(input: &str) -> IResult<&str, Fragment> {
 
     let (i, alignment) = parse_alignment(i)?;
 
+    let (i, tag) = parse_tag(i)?;
+    let mut tag_value: Vec<String> = tag.split_terminator("\t").map(String::from).collect();
+    tag_value.retain(|tag| !tag.is_empty());
+
     let result = Fragment {
         id: id,
         ext_ref: ref_id,
@@ -127,15 +144,16 @@ fn parse_fragment(input: &str) -> IResult<&str, Fragment> {
         fbeg: fbeg,
         fend: fend,
         alignment: alignment,
+        tag: tag_value,
     };
 
     Ok((i, result))
 }
 
+/// function that parses the edge field
 fn parse_edge(input: &str) -> IResult<&str, Edge> {
     let tab = tag("\t");
 
-    // let (i, _line_type) = terminated(tag("C"), &tab)(input)?;
     let (i, id) = terminated(parse_opt_id, &tab)(input)?;
     
     let (i, sid1) = terminated(parse_ref, &tab)(i)?;
@@ -149,6 +167,10 @@ fn parse_edge(input: &str) -> IResult<&str, Edge> {
 
     let (i, alignment) = parse_alignment(i)?;
 
+    let (i, tag) = parse_tag(i)?;
+    let mut tag_value: Vec<String> = tag.split_terminator("\t").map(String::from).collect();
+    tag_value.retain(|tag| !tag.is_empty());
+
     let result = Edge {
         id: id,
         sid1: sid1,
@@ -158,6 +180,7 @@ fn parse_edge(input: &str) -> IResult<&str, Edge> {
         beg2: beg2,
         end2: end2,
         alignment: alignment,
+        tag: tag_value,
     };
 
     Ok((i, result))
@@ -173,7 +196,11 @@ fn parse_gap(input: &str) -> IResult<&str, Gap> {
     let (i, sid2) = terminated(parse_ref, &tab)(i)?;
 
     let (i, dist) = terminated(parse_int, &tab)(i)?;
-    let (i, var) = parse_int(i)?;
+    let (i, var) = parse_var(i)?;
+
+    let (i, tag) = parse_tag(i)?;
+    let mut tag_value: Vec<String> = tag.split_terminator("\t").map(String::from).collect();
+    tag_value.retain(|tag| !tag.is_empty());
 
     let result = Gap {
         id: id,
@@ -181,6 +208,7 @@ fn parse_gap(input: &str) -> IResult<&str, Gap> {
         sid2: sid2,
         dist: dist,
         var: var,
+        tag: tag_value,
     };
 
     Ok((i, result))
@@ -193,10 +221,15 @@ fn parse_ogroup(input: &str) -> IResult<&str, Group> {
     let (i, id) = terminated(parse_opt_id, &tab)(input)?;
     let (i, var_field) = parse_id(i)?;
     let value_var = var_field.split_terminator(" ").map(String::from).collect();    
+
+    let (i, tag) = parse_tag(i)?;
+    let mut tag_value: Vec<String> = tag.split_terminator("\t").map(String::from).collect();
+    tag_value.retain(|tag| !tag.is_empty());
     
     let result = Group {
         id: id,
         var_field: value_var,
+        tag: tag_value,
     };
 
     Ok((i, result))
@@ -209,10 +242,15 @@ fn parse_ugroup(input: &str) -> IResult<&str, Group> {
     let (i, id) = terminated(parse_opt_id, &tab)(input)?;
     let (i, var_field) = parse_id(i)?;
     let value_var = var_field.split_terminator(" ").map(String::from).collect();
+
+    let (i, tag) = parse_tag(i)?;
+    let mut tag_value: Vec<String> = tag.split_terminator("\t").map(String::from).collect();
+    tag_value.retain(|tag| !tag.is_empty());
     
     let result = Group {
         id: id,
         var_field: value_var,
+        tag: tag_value,
     };
 
     Ok((i, result))
@@ -292,55 +330,60 @@ mod test {
     use crate::parser::*;
 
     #[test]
-    fn can_parse_header() {
-        let hdr = "VN:Z:2.0";
-        let hdr_ = Header {
-            version: "VN:Z:2.0".to_string(),
-        };
-
-        match parse_header(hdr) {
-            Err(why) => panic!("{:?}", why),
-            Ok((res, h)) => assert_eq!(h, hdr_),
-        }
-    }
-
-    #[test]
-    fn can_parse_header_and_trace_space() {
-        let hdr = "VN:Z:2.0\tTS:i:*";
-        let hdr_ = Header {
-            version: "VN:Z:2.0\tTS:i:*".to_string(),
-        };
-
-        match parse_header(hdr) {
-            Err(why) => panic!("{:?}", why),
-            Ok((res, h)) => assert_eq!(h, hdr_),
-        }
-    }
-
-    #[test]
     fn can_parse_blank_header() {
         let hdr = "";
         let hdr_ = Header {
             version: "".to_string(),
+            tag: vec![],
         };
 
         match parse_header(hdr) {
             Err(why) => panic!("{:?}", why),
-            Ok((res, h)) => assert_eq!(h, hdr_),
+            Ok((_res, h)) => assert_eq!(h, hdr_),
+        }
+    }
+
+    #[test]
+    fn can_parse_header() {
+        let hdr = "VN:Z:2.0";
+        let hdr_ = Header {
+            version: "VN:Z:2.0".to_string(),
+            tag: vec![],
+        };
+
+        match parse_header(hdr) {
+            Err(why) => panic!("{:?}", why),
+            Ok((_res, h)) => assert_eq!(h, hdr_),
         }
     }
 
     #[test]
     fn can_parse_segment() {
-        let seg = "A\t10\tAAAAAAACGT";
+        let seg = "3\t21\tTGCAACGTATAGACTTGTCAC\tRC:i:4";
         let seg_ = Segment {
-            id: "A".to_string(),
-            len: "10".to_string(),
-            sequence: "AAAAAAACGT".to_string(),
+            id: "3".to_string(),
+            len: "21".to_string(),
+            sequence: "TGCAACGTATAGACTTGTCAC".to_string(),
+            tag: vec!["RC:i:4".to_string()],
         };
         match parse_segment(seg) {
             Err(why) => panic!("{:?}", why),
-            Ok((res, s)) => assert_eq!(s, seg_),
+            Ok((_res, s)) => assert_eq!(s, seg_),
+        }
+    }
+
+    #[test]
+    fn can_parse_double_tag_segment() {
+        let seg = "61\t61\tGACAAAGTCATCGGGCATTATCTGAACATAAAACACTATCAATAAGTTGGAGTCATTACCT\tLN:i:61\tKC:i:9455";
+        let seg_ = Segment {
+            id: "61".to_string(),
+            len: "61".to_string(),
+            sequence: "GACAAAGTCATCGGGCATTATCTGAACATAAAACACTATCAATAAGTTGGAGTCATTACCT".to_string(),
+            tag: vec!["LN:i:61".to_string(), "KC:i:9455".to_string()],
+        };
+        match parse_segment(seg) {
+            Err(why) => panic!("{:?}", why),
+            Ok((_res, s)) => assert_eq!(s, seg_),
         }
     }
     
@@ -355,10 +398,11 @@ mod test {
             fbeg: "0".to_string(),
             fend: "140".to_string(),
             alignment: "11M".to_string(),
+            tag: vec![],
         };
         match parse_fragment(fragment) {
             Err(why) => panic!("{:?}", why),
-            Ok((res, f)) => assert_eq!(f, fragment_),
+            Ok((_res, f)) => assert_eq!(f, fragment_),
         }
     }
 
@@ -375,11 +419,12 @@ mod test {
             beg2: "20".to_string(),
             end2: "67$".to_string(),
             alignment: "47M".to_string(),
+            tag: vec![],
         };
 
         match parse_edge(edge) {
             Err(why) => panic!("{:?}", why),
-            Ok((res, e)) => assert_eq!(e, edge_),
+            Ok((_res, e)) => assert_eq!(e, edge_),
         }
     }
 
@@ -393,11 +438,31 @@ mod test {
             sid2: "12+".to_string(),
             dist: "500".to_string(),
             var: "50".to_string(),
+            tag: vec![],
         };
 
         match parse_gap(gap) {
             Err(why) => panic!("{:?}", why),
-            Ok((res, g)) => assert_eq!(g, gap_),
+            Ok((_res, g)) => assert_eq!(g, gap_),
+        }
+    }
+
+    #[test]
+    fn can_parse_gap2() {
+        let gap = "g1\t7+\t22+\t10\t*";
+
+        let gap_ = Gap {
+            id: "g1".to_string(),
+            sid1: "7+".to_string(),
+            sid2: "22+".to_string(),
+            dist: "10".to_string(),
+            var: "*".to_string(),
+            tag: vec![],
+        };
+
+        match parse_gap(gap) {
+            Err(why) => panic!("{:?}", why),
+            Ok((_res, g)) => assert_eq!(g, gap_),
         }
     }
 
@@ -408,12 +473,12 @@ mod test {
         let group_ = Group {
             id: "2_to_12".to_string(),
             var_field: vec!["11+".to_string(), "11_to_13+".to_string(), "13+".to_string()],
-            // tag: vec!["xx:i:-1".to_string()],
+            tag: vec!["xx:i:-1".to_string()],
         };
 
         match parse_ogroup(group) {
             Err(why) => panic!("{:?}", why),
-            Ok((res, o)) => assert_eq!(o, group_),
+            Ok((_res, o)) => assert_eq!(o, group_),
         }
     }
 
@@ -424,11 +489,12 @@ mod test {
         let group_ = Group {
             id: "16sub".to_string(),
             var_field: vec!["2".to_string(), "3".to_string()],
+            tag: vec![],
         };
 
         match parse_ugroup(group) {
             Err(why) => panic!("{:?}", why),
-            Ok((res, u)) => assert_eq!(u, group_),
+            Ok((_res, u)) => assert_eq!(u, group_),
         }
     }
 }

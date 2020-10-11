@@ -7,13 +7,13 @@
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Header {
     pub version: String,
-    // pub tag: Vec<String>,
+    pub tag: Vec<String>,
 }
 impl Header {
     pub fn new(version: &str, tag: Vec<&str>) -> Header {
         Header {
             version: version.to_string(),
-            // tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
+            tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
         }
     }
 }
@@ -30,7 +30,7 @@ pub struct Segment {
     pub id: String,
     pub len: String,
     pub sequence: String,
-    // pub tag: Vec<String>,
+    pub tag: Vec<String>,
 }
 
 impl Segment {
@@ -39,7 +39,7 @@ impl Segment {
             id: name.to_string(),
             len: len.to_string(),
             sequence: sequence.to_string(),
-            // tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
+            tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
         }
     }
 }
@@ -61,7 +61,7 @@ pub struct Fragment {
     pub fend: String,
     // alignment field can be *, trace or CIGAR
     pub alignment: String, 
-    // pub tag: Vec<String>,
+    pub tag: Vec<String>,
 }
 
 impl Fragment {
@@ -83,7 +83,7 @@ impl Fragment {
             fbeg: fbeg.to_string(),
             fend: fend.to_string(),
             alignment: alignment.to_string(),
-            // tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
+            tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
         }
     }
 }
@@ -139,7 +139,7 @@ pub struct Edge {
     pub beg2: String,
     pub end2: String, // dollar character as optional final char
     pub alignment: String,
-    // pub tag: Vec<String>,
+    pub tag: Vec<String>,
 }
 
 impl Edge {
@@ -163,7 +163,7 @@ impl Edge {
             beg2: beg2.to_string(),
             end2: end2.to_string(),
             alignment: alignment.to_string(),
-            // tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
+            tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
         }
     }
 }
@@ -186,7 +186,7 @@ pub struct Gap {
     pub sid2: String, // orientation as final char (+-)
     pub dist: String,
     pub var: String,
-    // pub tag: Vec<String>,
+    pub tag: Vec<String>,
 }
 
 impl Gap {
@@ -204,7 +204,7 @@ impl Gap {
             sid2: sid2.to_string(),
             dist: dist.to_string(),
             var: var.to_string(),
-            // tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
+            tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
         }
     }
 }
@@ -234,7 +234,7 @@ pub struct Group {
     pub id: String, // optional id, can be either * or id tag
     pub var_field: Vec<String>, // variable field, O-Group have this as optional tag
                     // instead U-Group have dis as normal tag   
-    // pub tag: Vec<String>,  
+    pub tag: Vec<String>,  
 }
 
 impl Group {
@@ -244,7 +244,7 @@ impl Group {
             var_field: var_field.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
             // convert a Vec<T> to Vec<String>
             // this conversion is used to convert Vec<&str> to Vec<String>
-            // tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
+            tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
         }
     }
 }
