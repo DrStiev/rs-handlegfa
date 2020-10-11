@@ -1,6 +1,6 @@
 /// insert the REAL tests here
 #[cfg(test)]
-mod test {
+mod tests {
     use std::path::PathBuf;
     use crate::parser::*;
 
@@ -16,14 +16,45 @@ mod test {
                 let num_fragment = g.fragments.len();
                 let num_edge = g.edges.len();
                 let num_gap = g.gaps.len();
-                let num_group = g.groups.len();
+                let num_group_o = g.groups_o.len();
+                let num_group_u = g.groups_u.len();
 
                 assert_eq!(num_head, 1);
                 assert_eq!(num_segs, 64);
                 assert_eq!(num_fragment, 0);
                 assert_eq!(num_edge, 71);
                 assert_eq!(num_gap, 0);
-                assert_eq!(num_group, 0);
+                assert_eq!(num_group_o, 0);
+                assert_eq!(num_group_u, 0);
+
+            }
+        }
+    }
+
+    #[test]
+    fn check_test_display_trait_gfa_file() {
+        let gfa = parse_gfa(&PathBuf::from("test\\gfas\\gfa2_files\\irl.gfa"));
+
+        match gfa {
+            None => panic!("Error parsing GFA file"),
+            Some(g) => {
+                let num_head = g.headers.len();
+                let num_segs = g.segments.len();
+                let num_fragment = g.fragments.len();
+                let num_edge = g.edges.len();
+                let num_gap = g.gaps.len();
+                let num_group_o = g.groups_o.len();
+                let num_group_u = g.groups_u.len();
+
+                assert_eq!(num_head, 0);
+                assert_eq!(num_segs, 3);
+                assert_eq!(num_fragment, 0);
+                assert_eq!(num_edge, 4);
+                assert_eq!(num_gap, 0);
+                assert_eq!(num_group_o, 4);
+                assert_eq!(num_group_u, 0);
+                
+                println!("{:#?}", g);
             }
         }
     }
@@ -40,14 +71,16 @@ mod test {
                 let num_fragment = g.fragments.len();
                 let num_edge = g.edges.len();
                 let num_gap = g.gaps.len();
-                let num_group = g.groups.len();
+                let num_group_o = g.groups_o.len();
+                let num_group_u = g.groups_u.len();
 
                 assert_eq!(num_head, 0);
                 assert_eq!(num_segs, 61);
                 assert_eq!(num_fragment, 11);
                 assert_eq!(num_edge, 84);
                 assert_eq!(num_gap, 2);
-                assert_eq!(num_group, 4);
+                assert_eq!(num_group_o, 2);
+                assert_eq!(num_group_u, 2);
             }
         }
     }
@@ -64,14 +97,16 @@ mod test {
                 let num_fragment = g.fragments.len();
                 let num_edge = g.edges.len();
                 let num_gap = g.gaps.len();
-                let num_group = g.groups.len();
+                let num_group_o = g.groups_o.len();
+                let num_group_u = g.groups_u.len();
                 
                 assert_eq!(num_head, 1);
                 assert_eq!(num_segs, 0);
                 assert_eq!(num_fragment, 0);
                 assert_eq!(num_edge, 0);
                 assert_eq!(num_gap, 0);
-                assert_eq!(num_group, 0);
+                assert_eq!(num_group_o, 0);
+                assert_eq!(num_group_u, 0);
             }
         }
     }
@@ -88,14 +123,16 @@ mod test {
                 let num_fragment = g.fragments.len();
                 let num_edge = g.edges.len();
                 let num_gap = g.gaps.len();
-                let num_group = g.groups.len();
+                let num_group_o = g.groups_o.len();
+                let num_group_u = g.groups_u.len();
 
                 assert_eq!(num_head, 0);
                 assert_eq!(num_segs, 0);
                 assert_eq!(num_fragment, 0);
                 assert_eq!(num_edge, 0);
                 assert_eq!(num_gap, 0);
-                assert_eq!(num_group, 0);
+                assert_eq!(num_group_o, 0);
+                assert_eq!(num_group_u, 0);
             }
         }
     }
@@ -112,14 +149,16 @@ mod test {
                 let num_fragment = g.fragments.len();
                 let num_edge = g.edges.len();
                 let num_gap = g.gaps.len();
-                let num_group = g.groups.len();
+                let num_group_o = g.groups_o.len();
+                let num_group_u = g.groups_u.len();
 
                 assert_eq!(num_head, 0);
                 assert_eq!(num_segs, 0);
                 assert_eq!(num_fragment, 0);
                 assert_eq!(num_edge, 0);
                 assert_eq!(num_gap, 0);
-                assert_eq!(num_group, 0);
+                assert_eq!(num_group_o, 0);
+                assert_eq!(num_group_u, 0);
             }
         }
     }

@@ -228,18 +228,40 @@ impl Gap {
 /// A set can contain a reference to a path, but not vice versa, 
 /// in which case the orientation of the objects in the path become irrelevant.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-// O-Group and U-Group are different only for one field
-// this field can implment or not an optional tag (using * char)
-pub struct Group {
+pub struct GroupO {
+    // O-Group and U-Group are different only for one field
+    // this field can implment or not an optional tag (using * char)
     pub id: String, // optional id, can be either * or id tag
     pub var_field: Vec<String>, // variable field, O-Group have this as optional tag
                                 // instead U-Group have dis as normal tag   
     pub tag: Vec<String>,  
 }
 
-impl Group {
-    pub fn new(id: &str, var_field: Vec<&str>, tag: Vec<&str>) -> Group {
-        Group {
+impl GroupO {
+    pub fn new(id: &str, var_field: Vec<&str>, tag: Vec<&str>) -> GroupO {
+        GroupO {
+            id: id.to_string(),
+            var_field: var_field.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
+            // convert a Vec<T> to Vec<String>
+            // this conversion is used to convert Vec<&str> to Vec<String>
+            tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub struct GroupU {
+    // O-Group and U-Group are different only for one field
+    // this field can implment or not an optional tag (using * char)
+    pub id: String, // optional id, can be either * or id tag
+    pub var_field: Vec<String>, // variable field, O-Group have this as optional tag
+                                // instead U-Group have dis as normal tag   
+    pub tag: Vec<String>,  
+}
+
+impl GroupU {
+    pub fn new(id: &str, var_field: Vec<&str>, tag: Vec<&str>) -> GroupU {
+        GroupU {
             id: id.to_string(),
             var_field: var_field.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
             // convert a Vec<T> to Vec<String>
@@ -256,7 +278,8 @@ pub enum Line {
     Fragment(Fragment),
     Edge(Edge),
     Gap(Gap),
-    Group(Group),
+    GroupO(GroupO),
+    GroupU(GroupU),
     Comment,
     CustomRecord,
 }
@@ -277,15 +300,16 @@ pub enum Line {
 /// Moreover, almost all references to identifiers are oriented, by virtue of a post-fix + or - sign. 
 /// A +-sign indicates the object is in the orientation it was defined, and a --sign indicates it should be reverse-complemented.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-// struct to hold the results of parsing a file; not actually a graph
-// TODO: implement an handlegraph to hold the result of parsing a GFA2 file
 pub struct GFA2 {
+    // struct to hold the results of parsing a file; not actually a graph
+    // TODO: implement an handlegraph to hold the result of parsing a GFA2 file
     pub headers: Vec<Header>,
     pub segments: Vec<Segment>,
     pub fragments: Vec<Fragment>,
     pub edges: Vec<Edge>,
     pub gaps: Vec<Gap>,
-    pub groups: Vec<Group>,
+    pub groups_o: Vec<GroupO>,
+    pub groups_u: Vec<GroupU>,
 }
 
 impl GFA2 {
@@ -296,7 +320,182 @@ impl GFA2 {
             fragments: vec![],
             edges: vec![],
             gaps: vec![],
-            groups: vec![],
+            groups_o: vec![],
+            groups_u: vec![],
         }
+    }
+}
+
+use std::fmt;
+
+impl fmt::Display for Header {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "H\t{}\t{}",
+            self.version,
+            // this inline method is useful but add a tabspace at the end of the tag 
+            // creating so an incorrect string 
+            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
+        )
+    }
+}
+
+impl fmt::Display for Segment {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "S\t{}\t{}\t{}\t{}",
+            self.id,
+            self.len,
+            self.sequence,
+            // this inline method is useful but add a tabspace at the end of the tag 
+            // creating so an incorrect string 
+            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
+        )
+    }
+}
+
+impl fmt::Display for Fragment {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "F\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            self.id,
+            self.ext_ref,
+            self.sbeg,
+            self.send,
+            self.fbeg,
+            self.fend,
+            self.alignment,
+            // this inline method is useful but add a tabspace at the end of the tag 
+            // creating so an incorrect string 
+            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
+        )
+    }
+}
+
+impl fmt::Display for Edge {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "E\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            self.id,
+            self.sid1,
+            self.sid2,
+            self.beg1,
+            self.end1,
+            self.beg2,
+            self.end2,
+            self.alignment,
+            // this inline method is useful but add a tabspace at the end of the tag 
+            // creating so an incorrect string 
+            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
+        )
+    }
+}
+
+impl fmt::Display for Gap {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "G\t{}\t{}\t{}\t{}\t{}\t{}",
+            self.id,
+            self.sid1,
+            self.sid2,
+            self.dist,
+            self.var,
+            // this inline method is useful but add a tabspace at the end of the tag 
+            // creating so an incorrect string 
+            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
+        )
+    }
+}
+
+impl fmt::Display for GroupO {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "O\t{}\t{}\t{}",
+            self.id,
+            // this inline method is useful but add a whitespace at the end of the var_field 
+            // creating so an incorrect string 
+            self.var_field.iter().fold(String::new(), |acc, str| acc + &str.to_string() + " "),
+            // this inline method is useful but add a tabspace at the end of the tag 
+            // creating so an incorrect string 
+            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
+        )
+    }
+}
+
+impl fmt::Display for GroupU {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "U\t{}\t{}\t{}",
+            self.id,
+            // this inline method is useful but add a whitespace at the end of the var_field 
+            // creating so an incorrect string 
+            self.var_field.iter().fold(String::new(), |acc, str| acc + &str.to_string() + " "),
+            // this inline method is useful but add a tabspace at the end of the tag 
+            // creating so an incorrect string 
+            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
+        )
+    }
+}
+
+impl fmt::Display for GFA2 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f, 
+            "{}\n{}\n{}\n{}\n{}\n{}\n{}",
+            self.headers.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
+            self.segments.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
+            self.fragments.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
+            self.edges.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
+            self.gaps.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
+            self.groups_o.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
+            self.groups_u.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
+        )
+    }
+}
+
+#[cfg(test)] 
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+    use crate::parser::*;
+
+    #[test]
+    fn print_GFA2_file() {
+        let parser = parse_gfa(&PathBuf::from("test\\gfas\\gfa2_files\\irl.gfa"));
+
+        match parser {
+            None => panic!("Error parsing the file"),
+            Some(parser) => {
+                let mut gfa2 = GFA2::new();
+                
+                gfa2.headers = parser.headers;
+                gfa2.segments = parser.segments;
+                gfa2.fragments = parser.fragments;
+                gfa2.edges = parser.edges;
+                gfa2.gaps = parser.gaps;
+                gfa2.groups_o = parser.groups_o;
+                gfa2.groups_u = parser.groups_u;
+
+                println!("{}", gfa2);
+            }
+        }
+    }
+
+    #[test]
+    fn write_GFA2_file() {
+        // TODO: FIXME! add a way to save the content of the file
+        let irl = parse_gfa(&PathBuf::from("test\\gfas\\gfa2_files\\irl.gfa"));
+        // save the content of irl on output_irl.gfa
+        // ...
+        // control the content of output_irl_gfa
+        let test = parse_gfa(&PathBuf::from("test\\gfas\\output_file\\output_irl.gfa"));
+        assert_eq!(irl, test);  
     }
 }

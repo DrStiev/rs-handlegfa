@@ -213,7 +213,7 @@ fn parse_gap(input: &str) -> IResult<&str, Gap> {
 }
 
 /// function that parses the group field
-fn parse_ogroup(input: &str) -> IResult<&str, Group> {
+fn parse_ogroup(input: &str) -> IResult<&str, GroupO> {
     let tab = tag("\t");
 
     let (i, id) = terminated(parse_opt_id, &tab)(input)?;
@@ -224,7 +224,7 @@ fn parse_ogroup(input: &str) -> IResult<&str, Group> {
     let mut tag_value: Vec<String> = tag.split_terminator("\t").map(String::from).collect();
     tag_value.retain(|tag| !tag.is_empty());
     
-    let result = Group {
+    let result = GroupO {
         id: id,
         var_field: value_var,
         tag: tag_value,
@@ -234,7 +234,7 @@ fn parse_ogroup(input: &str) -> IResult<&str, Group> {
 }
 
 /// function that parses the group field
-fn parse_ugroup(input: &str) -> IResult<&str, Group> {
+fn parse_ugroup(input: &str) -> IResult<&str, GroupU> {
     let tab = tag("\t");
 
     let (i, id) = terminated(parse_opt_id, &tab)(input)?;
@@ -245,7 +245,7 @@ fn parse_ugroup(input: &str) -> IResult<&str, Group> {
     let mut tag_value: Vec<String> = tag.split_terminator("\t").map(String::from).collect();
     tag_value.retain(|tag| !tag.is_empty());
     
-    let result = Group {
+    let result = GroupU {
         id: id,
         var_field: value_var,
         tag: tag_value,
@@ -282,11 +282,11 @@ fn parse_line(line: &str) -> IResult<&str, Line> {
         }
         'O' => {
             let (i, o) = parse_ogroup(i)?;
-            Ok((i, Line::Group(o)))
+            Ok((i, Line::GroupO(o)))
         }
         'U' => {
             let (i, u) = parse_ugroup(i)?;
-            Ok((i, Line::Group(u)))
+            Ok((i, Line::GroupU(u)))
         }
         _ => Ok((i, Line::CustomRecord)), // ignore unrecognized prefix to allow custom record
     }
@@ -315,8 +315,10 @@ pub fn parse_gfa(path: &PathBuf) -> Option<GFA2> {
             gfa.edges.push(e);
         } else if let Ok((_, Line::Gap(g))) = p {
             gfa.gaps.push(g);
-        } else if let Ok((_, Line::Group(ou))) = p {
-            gfa.groups.push(ou)
+        } else if let Ok((_, Line::GroupO(o))) = p {
+            gfa.groups_o.push(o)
+        } else if let Ok((_, Line::GroupU(u))) = p {
+            gfa.groups_u.push(u)
         }
     }
 
@@ -324,7 +326,7 @@ pub fn parse_gfa(path: &PathBuf) -> Option<GFA2> {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use crate::parser::*;
 
     #[test]
@@ -468,7 +470,7 @@ mod test {
     fn can_parse_o_group() {
         let group = "2_to_12\t11+ 11_to_13+ 13+\txx:i:-1";
 
-        let group_ = Group {
+        let group_ = GroupO {
             id: "2_to_12".to_string(),
             var_field: vec!["11+".to_string(), "11_to_13+".to_string(), "13+".to_string()],
             tag: vec!["xx:i:-1".to_string()],
@@ -484,7 +486,7 @@ mod test {
     fn can_parse_u_group() {
         let group = "16sub\t2 3";
 
-        let group_ = Group {
+        let group_ = GroupU {
             id: "16sub".to_string(),
             var_field: vec!["2".to_string(), "3".to_string()],
             tag: vec![],
