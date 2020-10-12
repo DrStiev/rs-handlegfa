@@ -6,7 +6,7 @@
 #[macro_use]
 extern crate clap;
 extern crate gfa;
-extern crate handlegraph;
+// extern crate handlegraph;
 
 /// separated the main.rs file from the file_operation.rs file
 /// this improves the readability of the code (imho)

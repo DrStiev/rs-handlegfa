@@ -4,6 +4,7 @@ use gfa::{
     parser::{GFAParser, ParseError},
     writer::write_gfa,
 };
+/*
 use handlegraph::{
     handle::{Direction, Edge, Handle, NodeId},
     handlegraph::HandleGraph,
@@ -11,6 +12,7 @@ use handlegraph::{
     mutablehandlegraph::MutableHandleGraph,
     pathgraph::PathHandleGraph,
 }; 
+*/
 // library to handle the path of a file
 use std::path::PathBuf;
 use bstring::BString;
@@ -65,6 +67,7 @@ pub fn file_to_gfa(path: &PathBuf) -> Result<GFA<usize, ()>, ParseError> {
     Ok(gfa)
 }
 
+/*
 /// function to convert a gfa graph to an handlegraph
 pub fn gfa_to_handlegraph(gfa: GFA<usize, ()>) {
     let _graph: HashGraph = HashGraph::from_gfa(&gfa);
@@ -76,3 +79,4 @@ pub fn gfa_to_handlegraph(gfa: GFA<usize, ()>) {
 
     // println!("Convert a gfa file to an handlegraph:\n{:#?}", _graph);
 }
+*/

@@ -1,48 +1,59 @@
-use nom::branch::alt;
-use nom::bytes::complete::*;
-use nom::character::complete::*;
-use nom::combinator::map;
-use nom::multi::separated_list;
-use nom::sequence::terminated;
-use nom::IResult;
-use std::fs::File;
-use std::io::prelude::*;
-use std::io::BufReader;
-use std::path::PathBuf;
+use nom::{
+    branch::alt,
+    bytes::complete::*,
+    character::complete::*,
+    combinator::map,
+    multi::separated_list,
+    sequence::terminated,
+    IResult,
+    re_find,
+};
+use std::{
+    fs::File,
+    io::prelude::*,
+    io::BufReader,
+    path::PathBuf,
+};
 
 use crate::gfa::*;
 
+/// function that parses the name field 
 fn parse_name(input: &str) -> IResult<&str, String> {
     let (i, name) = re_find!(input, r"^[!-)+-<>-~][!-~]*")?;
     Ok((i, name.to_string()))
 }
 
-fn parse_header(input: &str) -> IResult<&str, Header> {
-    let col = tag(":");
-    // let (i, _line_type) = terminated(tag("H"), tag("\t"))(input)?;
-    let (i, _opt_tag) = terminated(tag("VN"), &col)(input)?;
-    let (i, _opt_type) = terminated(tag("Z"), &col)(i)?;
-    let (i, version) = re_find!(i, r"[ !-~]+")?;
-
-    Ok((
-        i,
-        Header {
-            version: version.to_string(),
-        },
-    ))
+/// function that parses the first field of the header tag
+fn parse_header_tag(input: &str) -> IResult<&str, String> {
+    let(i, header) = re_find!(input, r"(VN:Z:1.0)?")?;
+    Ok((i, header.to_string()))
 }
 
+/// function that parses the header tag
+fn parse_header(input: &str) -> IResult<&str, Header> {
+    let (i, version) = parse_header_tag(input)?;
+
+    let result = Header {
+        version: version,
+    };
+
+    Ok((i, result))
+}
+
+/// function that parses the sequence field
 fn parse_sequence(input: &str) -> IResult<&str, String> {
     let (i, seq) = re_find!(input, r"\*|[A-Za-z=.]+")?;
     Ok((i, seq.to_string()))
 }
 
+/// function that parses the orientation character
 fn parse_orient(input: &str) -> IResult<&str, Orientation> {
     let fwd = map(tag("+"), |_| Orientation::Forward);
     let bkw = map(tag("-"), |_| Orientation::Backward);
     alt((fwd, bkw))(input)
 }
 
+/// function that parses the overlap field
 fn parse_overlap(input: &str) -> IResult<&str, String> {
     let (i, overlap) = re_find!(input, r"\*|([0-9]+[MIDNSHPX=])+")?;
     Ok((i, overlap.to_string()))
@@ -70,12 +81,11 @@ fn parse_optional(input: &str) -> IResult<&str, OptionalField> {
 }
 */
 
+/// function that parses the segment tag
 fn parse_segment(input: &str) -> IResult<&str, Segment> {
     let tab = tag("\t");
-    // let (input, _line_type) = terminated(tag("S"), &tab)(input)?;
 
     let (i, name) = terminated(parse_name, &tab)(input)?;
-
     let (i, seq) = parse_sequence(i)?;
 
     // TODO branch on the length of the remaining input to read the rest
@@ -83,18 +93,21 @@ fn parse_segment(input: &str) -> IResult<&str, Segment> {
     let result = Segment {
         name: name,
         sequence: seq,
+
+        segment_len: None,
         read_count: None,
         fragment_count: None,
         kmer_count: None,
+        checksum: None,
         uri: None,
     };
 
     Ok((i, result))
 }
 
+/// function that parses the link tag
 fn parse_link(input: &str) -> IResult<&str, Link> {
     let tab = tag("\t");
-    // let (i, _line_type) = terminated(tag("L"), &tab)(input)?;
 
     let seg = terminated(parse_name, &tab);
     let orient = terminated(parse_orient, &tab);
@@ -111,6 +124,7 @@ fn parse_link(input: &str) -> IResult<&str, Link> {
         to_segment,
         to_orient,
         overlap,
+
         map_quality: None,
         num_mismatches: None,
         read_count: None,
@@ -122,9 +136,9 @@ fn parse_link(input: &str) -> IResult<&str, Link> {
     Ok((i, result))
 }
 
+/// function that parses the containment tag
 fn parse_containment(input: &str) -> IResult<&str, Containment> {
     let tab = tag("\t");
-    // let (i, _line_type) = terminated(tag("C"), &tab)(input)?;
 
     let seg = terminated(parse_name, &tab);
     let orient = terminated(parse_orient, &tab);
@@ -144,6 +158,7 @@ fn parse_containment(input: &str) -> IResult<&str, Containment> {
         contained_orient,
         overlap,
         pos: pos.parse::<usize>().unwrap(),
+    
         read_coverage: None,
         num_mismatches: None,
         edge_id: None,
@@ -152,6 +167,7 @@ fn parse_containment(input: &str) -> IResult<&str, Containment> {
     Ok((i, result))
 }
 
+/// function that parses the path tag
 fn parse_path(input: &str) -> IResult<&str, Path> {
     let (i, path_name) = terminated(parse_name, &tab)(input)?;
     let (i, segs) = terminated(parse_name, &tab)(i)?;
@@ -167,7 +183,8 @@ fn parse_path(input: &str) -> IResult<&str, Path> {
     Ok((i, result))
 }
 
-pub fn parse_line(line: &str) -> IResult<&str, Line> {
+/// function that parses the line of a GFA file
+fn parse_line(line: &str) -> IResult<&str, Line> {
     let (i, line_type) = terminated(one_of("HSLCP#"), tab)(line)?;
 
     match line_type {
@@ -196,6 +213,51 @@ pub fn parse_line(line: &str) -> IResult<&str, Line> {
     }
 }
 
+/// Read a file and tries to parse as a GFA file.\
+/// Returns an [`Option<GFA>`][option] object
+/// 
+/// [option]: https://doc.rust-lang.org/std/option/enum.Option.html
+/// 
+/// [gfa]: https://github.com/GFA-spec/GFA-spec/blob/master/GFA1.md
+/// 
+/// [pathbuf]: https://doc.rust-lang.org/std/path/struct.PathBuf.html 
+/// 
+/// # Argument
+/// 
+///  * `file path` - A [`reference`][pathbuf] to a relative (or absolute) path to a file \
+///     
+/// # Output
+/// 
+/// * `GFA file` - a [`option<GFA>`][option] object, in which is stored the result if \ 
+///     the parsing function has run smoothly
+/// 
+/// # Examples
+/// 
+/// ```
+/// use rs_gfa2::parser::*;
+/// use std::path::PathBuf;
+/// 
+/// // initialize the parser object
+/// let gfa = parse_gfa(&PathBuf::from("test\\gfas\\gfa1_files\\lil.gfa"));
+///         match gfa {
+///             None => panic!("Error parsing GFA file"),
+///             Some(g) => {
+///                 let num_head = g.headers.len();
+///                 let num_segs = g.segments.len();
+///                 let num_links = g.links.len();
+///                 let num_paths = g.paths.len();
+///                 let num_conts = g.containments.len();
+///
+///                 assert_eq!(num_head, 1);
+///                 assert_eq!(num_segs, 15);
+///                 assert_eq!(num_links, 20);
+///                 assert_eq!(num_conts, 0);
+///                 assert_eq!(num_paths, 3);
+///
+///                 println!("{}", g);
+///             }
+///         }
+///```
 pub fn parse_gfa(path: &PathBuf) -> Option<GFA> {
     let file = File::open(path).expect(&format!("Error opening file {:?}", path));
 
@@ -208,7 +270,9 @@ pub fn parse_gfa(path: &PathBuf) -> Option<GFA> {
         let l = line.expect("Error parsing file");
         let p = parse_line(&l);
 
-        if let Ok((_, Line::Segment(s))) = p {
+        if let Ok((_, Line::Header(h))) = p {
+            gfa.headers.push(h);
+        } else if let Ok((_, Line::Segment(s))) = p {
             gfa.segments.push(s);
         } else if let Ok((_, Line::Link(l))) = p {
             gfa.links.push(l);
@@ -230,14 +294,14 @@ mod tests {
     fn can_parse_header() {
         let hdr = "VN:Z:1.0";
         let hdr_ = Header {
-            version: "1.0".to_string(),
+            version: "VN:Z:1.0".to_string(),
         };
 
         match parse_header(hdr) {
             Err(err) => {
-                panic!(&format!("{:?}", err));
+                panic!("{:?}", err);
             }
-            Ok((res, h)) => assert_eq!(h, hdr_),
+            Ok((_res, h)) => assert_eq!(h, hdr_),
         }
     }
 
@@ -247,16 +311,19 @@ mod tests {
         let seg_ = Segment {
             name: "11".to_string(),
             sequence: "ACCTT".to_string(),
+
+            segment_len: None,
             read_count: None,
             fragment_count: None,
             kmer_count: None,
+            checksum: None,
             uri: None,
         };
         match parse_segment(seg) {
             Err(err) => {
-                panic!(&format!("{:?}", err));
+                panic!("{:?}", err);
             }
-            Ok((res, s)) => assert_eq!(s, seg_),
+            Ok((_res, s)) => assert_eq!(s, seg_),
         }
     }
 
@@ -269,6 +336,7 @@ mod tests {
             to_segment: "12".to_string(),
             to_orient: Orientation::Backward,
             overlap: "4M".to_string(),
+
             map_quality: None,
             num_mismatches: None,
             read_count: None,
@@ -278,9 +346,9 @@ mod tests {
         };
         match parse_link(link) {
             Err(err) => {
-                panic!(&format!("{:?}", err));
+                panic!("{:?}", err);
             }
-            Ok((res, l)) => assert_eq!(l, link_),
+            Ok((_res, l)) => assert_eq!(l, link_),
         }
     }
 
@@ -294,6 +362,7 @@ mod tests {
             contained_name: "2".to_string(),
             contained_orient: Orientation::Forward,
             overlap: "100M".to_string(),
+
             pos: 110,
             read_coverage: None,
             num_mismatches: None,
@@ -302,9 +371,9 @@ mod tests {
 
         match parse_containment(cont) {
             Err(err) => {
-                panic!(&format!("{:?}", err));
+                panic!("{:?}", err);
             }
-            Ok((res, c)) => assert_eq!(c, cont_),
+            Ok((_res, c)) => assert_eq!(c, cont_),
         }
     }
 
@@ -320,9 +389,9 @@ mod tests {
 
         match parse_path(path) {
             Err(err) => {
-                panic!(&format!("{:?}", err));
+                panic!("{:?}", err);
             }
-            Ok((res, p)) => assert_eq!(p, path_),
+            Ok((_res, p)) => assert_eq!(p, path_),
         }
     }
 
@@ -342,6 +411,9 @@ P	x	1+,3+,5+,6+,8+,9+,11+,12+,14+,15+	8M,1M,1M,3M,1M,19M,1M,4M,1M,11M";
         let mut gfa = GFA::new();
 
         let gfa_correct = GFA {
+            headers: vec![
+                Header::new("VN:Z:1.0"),
+            ],
             segments: vec![
                 Segment::new("1", "CAAATAAG"),
                 Segment::new("2", "A"),
@@ -366,7 +438,9 @@ P	x	1+,3+,5+,6+,8+,9+,11+,12+,14+,15+	8M,1M,1M,3M,1M,19M,1M,4M,1M,11M";
         for l in lines {
             let p = parse_line(l);
 
-            if let Ok((_, Line::Segment(s))) = p {
+            if let Ok((_, Line::Header(h))) = p {
+                gfa.headers.push(h);
+            } else if let Ok((_, Line::Segment(s))) = p {
                 gfa.segments.push(s);
             } else if let Ok((_, Line::Link(l))) = p {
                 gfa.links.push(l);
@@ -376,25 +450,5 @@ P	x	1+,3+,5+,6+,8+,9+,11+,12+,14+,15+	8M,1M,1M,3M,1M,19M,1M,4M,1M,11M";
         }
 
         assert_eq!(gfa_correct, gfa);
-    }
-
-    #[test]
-    fn can_parse_gfa_file() {
-        let gfa = parse_gfa(&PathBuf::from("test\\gfas\\gfa1_files\\lil.gfa"));
-
-        match gfa {
-            None => panic!("Error parsing GFA file"),
-            Some(g) => {
-                let num_segs = g.segments.len();
-                let num_links = g.links.len();
-                let num_paths = g.paths.len();
-                let num_conts = g.containments.len();
-
-                assert_eq!(num_segs, 15);
-                assert_eq!(num_links, 20);
-                assert_eq!(num_conts, 0);
-                assert_eq!(num_paths, 3);
-            }
-        }
     }
 }

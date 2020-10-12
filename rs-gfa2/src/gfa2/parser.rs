@@ -3,6 +3,7 @@ use nom::{
     character::complete::*,
     sequence::terminated,
     IResult,
+    re_find,
 };
 use std::{
     fs::File,
@@ -375,7 +376,7 @@ pub fn parse_gfa(path: &PathBuf) -> Option<GFA2> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::*;
+    use crate::parser_gfa2::*;
 
     #[test]
     fn can_parse_blank_header() {

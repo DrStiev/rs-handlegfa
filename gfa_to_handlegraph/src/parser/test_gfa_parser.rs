@@ -37,7 +37,7 @@ use super::*;
         file.push("test\\gfas\\gfa2_files\\blankDocument.gfa");
         print_gfa_file(file_to_gfa(&file));
     }
-
+/*
     #[test]
     fn handlegraph_from_right_parsed_file() {
         let mut file = PathBuf::new();
@@ -51,4 +51,5 @@ use super::*;
         file.push("test\\gfas\\gfa1_files\\compression_test.gfa");
         gfa_to_handlegraph((file_to_gfa(&file)).unwrap());
     }
+    */
 

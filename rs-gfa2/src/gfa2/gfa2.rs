@@ -840,7 +840,7 @@ impl fmt::Display for GFA2 {
 mod tests {
     use super::*;
     use std::path::PathBuf;
-    use crate::parser::*;
+    use crate::parser_gfa2::*;
 
     #[test]
     fn print_empty_gfa2_file() {
