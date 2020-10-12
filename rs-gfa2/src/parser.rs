@@ -292,7 +292,55 @@ fn parse_line(line: &str) -> IResult<&str, Line> {
     }
 }
 
-/// function that parses a GFA2 file
+/// Read a file and tries to parse as a GFA2 file.\
+/// Returns an [`Option<GFA>`][option] object
+/// 
+/// [option]: https://doc.rust-lang.org/std/option/enum.Option.html
+/// 
+/// [gfa]: https://github.com/GFA-spec/GFA-spec/blob/master/GFA2.md
+/// 
+/// [pathbuf]: https://doc.rust-lang.org/std/path/struct.PathBuf.html 
+/// 
+/// # Argument
+/// 
+///  * `file path` - A [`reference`][pathbuf] to a relative (or absolute) path to a file \
+///     
+/// # Output
+/// 
+/// * `GFA2 file` - a [`option<GFA>`][option] object, in which is stored the result if \ 
+///     the parsing function has run smoothly
+/// 
+/// # Examples
+/// 
+/// ```
+/// use rs_gfa2::parser::*;
+/// use std::path::PathBuf;
+/// 
+/// // initialize the parser object
+/// let gfa = parse_gfa(&PathBuf::from("test\\gfas\\big_file\\graph_nicernames.gfa"));
+///     match gfa {
+///     // check the results of the parsing function
+///         None => panic!("Error parsing GFA file"),
+///         Some(g) => {
+///         // use the result as you want
+///             let num_head = g.headers.len();
+///             let num_segs = g.segments.len();
+///             let num_fragment = g.fragments.len();
+///             let num_edge = g.edges.len();
+///             let num_gap = g.gaps.len();
+///             let num_group_o = g.groups_o.len();
+///             let num_group_u = g.groups_u.len();
+///             // control if the result it's correct
+///             assert_eq!(num_head, 0);
+///             assert_eq!(num_segs, 61);
+///             assert_eq!(num_fragment, 11);
+///             assert_eq!(num_edge, 84);
+///             assert_eq!(num_gap, 2);
+///             assert_eq!(num_group_o, 2);
+///             assert_eq!(num_group_u, 2);
+///     }
+/// }
+///```
 pub fn parse_gfa(path: &PathBuf) -> Option<GFA2> {
     let file = File::open(path).expect(&format!("Error opening file {:?}", path));
 
@@ -407,7 +455,7 @@ mod tests {
     }
 
     #[test]
-    fn can_parse_edge() {
+    fn can_parse_edge_cigar() {
         let edge = "*\t3+\t65-\t5329\t5376$\t20\t67$\t47M";
 
         let edge_ = Edge {
@@ -420,6 +468,28 @@ mod tests {
             end2: "67$".to_string(),
             alignment: "47M".to_string(),
             tag: vec![],
+        };
+
+        match parse_edge(edge) {
+            Err(why) => panic!("{:?}", why),
+            Ok((_res, e)) => assert_eq!(e, edge_),
+        }
+    }
+
+    #[test]
+    fn can_parse_edge_trace() {
+        let edge = "*\t1+\t2+\t3\t8$\t0\t5\t0,2,4\tTS:i:2";
+
+        let edge_ = Edge {
+            id: "*".to_string(),
+            sid1: "1+".to_string(),
+            sid2: "2+".to_string(),
+            beg1: "3".to_string(),
+            end1: "8$".to_string(),
+            beg2: "0".to_string(),
+            end2: "5".to_string(),
+            alignment: "0,2,4".to_string(),
+            tag: vec!["TS:i:2".to_string()],
         };
 
         match parse_edge(edge) {

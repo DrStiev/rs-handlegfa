@@ -1,9 +1,45 @@
-/// The header contains an optional 'VN' SAM-tag version number, 2.0, 
-/// and an optional 'TS' SAM-tag specifying the default the trace point spacing for any Dazzler traces 
-/// specified to accelerate alignment computation. Any number of header lines containing SAM-tags may occur. 
-/// A 'TS' tag can occur after the fixed arguments on any E-, G-, or F-line in which case 
-/// it specifies the trace spacing to use with the trace on that specific line, 
-/// otherwise the default spacing is used.
+/// implement the Display trait for all the struct in gfa2.rs
+use std::fmt;
+
+/// Returns an Header line which is composed of:\
+///     * [`version`][string] field,\ 
+///     * and a [`tag`][vec] field
+/// 
+/// [string]: https://doc.rust-lang.org/std/string/struct.String.html
+/// 
+/// [vec]: https://doc.rust-lang.org/std/vec/struct.Vec.html
+/// 
+/// # Arguments
+/// 
+/// * `version` - A [`string`][string] slice.
+/// * `tag` - A [`vector of string`][vec].
+/// 
+/// # Examples
+/// 
+/// ```
+/// use rs_gfa2::gfa2::*;
+/// 
+/// // inizialize a simple header 
+/// let simple_header = Header {
+///     version: "VN:Z:2.0".to_string(),
+///     tag: vec![],
+/// };
+/// 
+/// // inizialize a richer header
+/// let richer_header = Header {
+///     version: "VN:Z:2.0".to_string(),
+///     tag: vec!["RC:i:4".to_string()],
+/// };
+/// 
+/// // inizialize an empty header
+/// // this is allowed because all the fields 
+/// // of an Header line is either optional or
+/// // with zero-or-more counts 
+/// let empty_header = Header {
+///     version: "".to_string(),
+///     tag: vec![],
+/// };
+/// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Header {
     pub version: String,
@@ -19,13 +55,72 @@ impl Header {
     }
 }
 
-/// A segment is specified by an S-line giving a user-specified ID for the sequence, 
-/// its length in bases, and the string denoted by the segment or * if absent. 
-/// The sequence is typically expected to be bases or IUPAC characters, 
-/// but GFA2 places no restriction other than that they be printable characters other than space. 
-/// The length does not need to be the actual length of the sequence, if the sequence is given, 
-/// but rather an indication to a drawing program of how long to draw the representation of the segment. 
-/// The segment sequences and any CIGAR strings referring to them if present follow the unpadded SAM convention.
+impl fmt::Display for Header {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "H\t{}\t{}",
+            self.version,
+            // this inline method is useful but add a tabspace at the end of the tag 
+            // creating so an incorrect string 
+            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
+        )
+    }
+}
+
+/// Returns a Segment line which is composed of:\
+///     * [`id`][string] field,\
+///     * [`len`][string] field,\
+///     * [`sequence`][string] field,\
+///     * and a [`tag`][vec] field
+/// 
+/// [string]: https://doc.rust-lang.org/std/string/struct.String.html
+/// 
+/// [vec]: https://doc.rust-lang.org/std/vec/struct.Vec.html
+/// 
+/// # Arguments
+/// 
+/// * `id` - A [`string`][string] slice,\
+///     representing the id associated to the current segment.
+/// * `len` - A [`string`][string] slice, \
+///     representing the length of the following `sequence` string \
+///     the 'len' element does not need to be the actual length of the `sequence`.
+/// * `sequence` - A [`string`][string] slice, \
+///     this `string` is  typically expected to be bases or IUPAC characters, \
+///     but there's no restriction other than that the characters must be printable.
+/// * `tag` - A [`vector of string`][vec]. 
+/// 
+/// # Examples
+/// 
+/// ```
+/// use rs_gfa2::gfa2::*;
+/// 
+/// // inizialize a simple segment 
+/// let simple_segment = Segment {
+///     id: "3".to_string(),
+///     len: "21".to_string(),
+///     sequence: "TGCAACGTATAGACTTGTCAC".to_string(),
+///     tag: vec![],
+/// };
+/// 
+/// // inizialize a richer segment
+/// let richer_segment = Segment {
+///     id: "61".to_string(),
+///     len: "61".to_string(),
+///     sequence: "GACAAAGTCATCGGGCATTATCTGAACATAAAACACTATCAATAAGTTGGAGTCATTACCT".to_string(),
+///     tag: vec!["LN:i:61".to_string(), "KC:i:9455".to_string()],
+/// };
+/// 
+/// // inizialize an empty segment
+/// // this is allowed but the segment line will be  
+/// // considered not part of the GFA2 format
+/// let empty_segment = Segment {
+///     id: "".to_string(),
+///     len: "".to_string(),
+///     sequence: "".to_string(),
+///     tag: vec![],
+/// };
+/// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Segment {
     pub id: String,
@@ -45,13 +140,98 @@ impl Segment {
     }
 }
 
-/// Fragments, if present, are encoded in F-lines that give 
-/// (a) the segment they belong to, 
-/// (b) an oriented external ID that references a sequence in an external collection 
-/// (e.g. a database of reads or segments in another GFA2 or SAM file), 
-/// (c) the interval of the vertex segment that the external string contributes to, and 
-/// (d) the interval of the fragment that contributes to the segment. 
-/// One concludes with either a trace or CIGAR string detailing the alignment, or a * if absent.
+impl fmt::Display for Segment {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "S\t{}\t{}\t{}\t{}",
+            self.id,
+            self.len,
+            self.sequence,
+            // this inline method is useful but add a tabspace at the end of the tag 
+            // creating so an incorrect string 
+            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
+        )
+    }
+}
+
+/// Returns a Fragment line which is composed of:\
+///     * [`id`][string] field,\
+///     * [`external reference`][string] field,\
+///     * [`segment begin`][string] field,\
+///     * [`segment end`][string] field,\
+///     * [`fragment begin`][string] field,\
+///     * [`fragment end`][string] field,\
+///     * [`alignment`][string] field,\
+///     * and a [`tag`][vec] field
+/// 
+/// [string]: https://doc.rust-lang.org/std/string/struct.String.html
+/// 
+/// [vec]: https://doc.rust-lang.org/std/vec/struct.Vec.html
+/// 
+/// [trace]: https://dazzlerblog.wordpress.com/2015/11/05/trace-points/
+/// 
+/// [cigar]: https://samtools.github.io/hts-specs/SAMv1.pdf
+/// 
+/// # Arguments
+/// 
+/// * `id` - A [`string`][string] slice,\
+///     representing the id associated to the current fragment.
+/// * `external reference` - A [`string`][string] slice, \
+///     representing an 'id' that references a sequence in an external collection.
+/// * `segment begin` and `segment end` - A pair of [`string`][string] slices, \
+///     representing the interval of the vertex segment that the `external reference` string \
+///     contributes to.
+/// * `fragment begin` and `fragment end` - A pair of [`string`][string] slices, \
+///     representing the interval of the fragment that contributes to the segment.
+/// * `alignment` - A [`string`][string] slice, \
+///     representing the conclusion of the edge line and can be either a [`trace`][trace] or \
+///     [`CIGAR`][cigar] string detailing the alignment, or * if absent.
+/// * `tag` - A [`vector of string`][vec]. 
+/// 
+/// # Examples
+/// 
+/// ```
+/// use rs_gfa2::gfa2::*;
+/// 
+/// // inizialize a simple fragment 
+/// let simple_fragment = Fragment {
+///     id: "12".to_string(),
+///     ext_ref: "1-".to_string(),
+///     sbeg: "0".to_string(),
+///     send: "140$".to_string(),
+///     fbeg: "0".to_string(),
+///     fend: "140".to_string(),
+///     alignment: "11M".to_string(),
+///     tag: vec![],
+/// };
+/// 
+/// // inizialize a different fragment
+/// let different_fragment = Fragment {
+///     id: "2".to_string(),
+///     ext_ref: "read2+".to_string(),
+///     sbeg: "45".to_string(),
+///     send: "62".to_string(),
+///     fbeg: "0".to_string(),
+///     fend: "18".to_string(),
+///     alignment: "*".to_string(),
+///     tag: vec!["id:Z:read2_in_2".to_string()],
+/// };
+/// 
+/// // inizialize an empty fragment
+/// // this is allowed but the fragment line will be  
+/// // considered not part of the GFA2 format
+/// let empty_fragment = Fragment {
+///     id: "".to_string(),
+///     ext_ref: "".to_string(),
+///     sbeg: "".to_string(),
+///     send: "".to_string(),
+///     fbeg: "".to_string(),
+///     fend: "".to_string(),
+///     alignment: "".to_string(),
+///     tag: vec![],
+/// };
+/// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Fragment {
     pub id: String,
@@ -88,47 +268,121 @@ impl Fragment {
     }
 }
 
-/// Edges are encoded in E-lines that in general represent a local alignment between arbitrary intervals 
-/// of the sequences of the two vertices in question. 
-/// One gives first an edge ID or * and then the oriented segment ID’s of the two vertices involved.
-/// One then gives the intervals of each segment that align, each as a pair of positions. 
-/// A position is an integer optionally followed by a $-sign. 
-/// Positions are conceptually tick-marks between symbols starting a 0 to the left of the first symbol and ending at L 
-/// to the right of the last symbol where L is the length of the segment. 
-/// A $-sign must follow an integer x if and only if it is the last position in the segment it refers to, 
-/// i.e. x = L. It is an error to do otherwise.
-/// Position intervals are always intervals in the segment in its normal orientation before being oriented by 
-/// the orientation signs. 
-/// If a minus sign is specified, then the interval of the second segment is reverse complemented in order to 
-/// align with the interval of the first segment. 
-/// That is, E * s1+ s2- b1 e1 b2 e2 aligns s1[b1,e1] to the reverse complement of s2[b2,e2].
-/// A field for a CIGAR string or Dazzler-trace describing the alignment is last, but may be absent by giving a *. 
-/// One gives a CIGAR string to describe an exact alignment relationship between the two segments. 
-/// A trace string by contrast is given when one simply wants an accelerated method for computing an alignment 
-/// between the two intervals. A trace is a list of integers separated by commas, 
-/// each integer giving the # of characters in the second segment to align to the next TS characters 
-/// in the first segment where the TS is either the default trace spacing given in a header line with the TS SAM-tag, 
-/// or the spacing given in a TS SAM-tag on the line of the edge. 
-/// If a * is given as the alignment note that it is still possible to compute the implied alignment from the sequences.
+impl fmt::Display for Fragment {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "F\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            self.id,
+            self.ext_ref,
+            self.sbeg,
+            self.send,
+            self.fbeg,
+            self.fend,
+            self.alignment,
+            // this inline method is useful but add a tabspace at the end of the tag 
+            // creating so an incorrect string 
+            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
+        )
+    }
+}
+
+/// Returns a Edge line which is composed of:\
+///     * [`id`][string] field,\
+///     * [`segment 1 id`][string] field,\
+///     * [`segment 2 id`][string] field,\
+///     * [`begin segment 1`][string] field,\
+///     * [`end segment 1`][string] field,\
+///     * [`begin segment 2`][string] field,\
+///     * [`end segment 2`][string] field,\
+///     * [`alignment`][string] field,\
+///     * and a [`tag`][vec] field
+/// 
+/// [string]: https://doc.rust-lang.org/std/string/struct.String.html
+/// 
+/// [vec]: https://doc.rust-lang.org/std/vec/struct.Vec.html
+/// 
+/// [trace]: https://dazzlerblog.wordpress.com/2015/11/05/trace-points/
+/// 
+/// [cigar]: https://samtools.github.io/hts-specs/SAMv1.pdf
+/// 
+/// # Arguments
+/// 
+/// * `id` - A [`string`][string] slice,\
+///     representing the id associated to the current edge.
+/// * `segment 1 id` and `segment 2 id` - A pair of [`string`][string] slice, \
+///     representing an `id` that references to a pair of segments \
+///     in the local collection.
+/// * `begin segment 1` and `end segment 1` - A pair of [`string`][string] slices, \
+///     representing the interval of the first segment that align as a pair of positions. \
+///     Position is an integer optionally followed by a $-sign.
+/// * `begin segment 2` and `end segment 2` - A pair of [`string`][string] slices, \
+///     representing the interval of the first segment that align as a pair of positions. \
+///     Position is an integer optionally followed by a $-sign.
+/// * `alignment` - A [`string`][string] slice, \
+///     representing the conclusion of the edge line and can be either a [`trace`][trace] or \
+///     [`CIGAR`][cigar] string detailing the alignment, or * if absent.
+/// * `tag` - A [`vector of string`][vec]. 
+/// 
+/// ## Note
+/// 
 /// The GFA2 concept of edge generalizes the link and containment lines of GFA. 
 /// For example a GFA edge which encodes what is called a dovetail overlap (because two ends overlap) 
 /// is a GFA2 edge where:
-/// beg1 = 0 and end2 = y$ or beg2 = 0 and end1 = x$ (if the aligned segments are in the same orientation)
-/// beg1 = 0 and beg2 = 0 or end1 = x$ and end2 = y$ (if the aligned segments are in opposite orientation)
-/// while GFA containment is modeled by the case where either beg1 = 0 and end1 = x$ or beg2 = 0 and end2 = x$.
-/// ![Edge representation](https://github.com/GFA-spec/GFA-spec/blob/master/images/GFA2.Fig1.png) 
-/// Special codes could be adopted for dovetail and containment relationships but the thought is 
-/// there is no particular reason to do so, the use of the $ sentinel for terminal positions makes their identification 
-/// simple both algorithmically and visually, and the more general scenario allows interesting possibilities. 
-/// For example, one might have two haplotype bubbles shown in the “Before” picture below, 
-/// and then in a next phase choose a path through the bubbles as the primary “contig”, 
-/// and then capture the two bubble alternatives as a vertex linked with generalized edges shown in the “After” picture. 
-/// Note carefully that you need a generalized edge to capture the attachment of the two haplotype bubbles in the “After” picture.
-/// ![Edge representation 2](https://github.com/GFA-spec/GFA-spec/blob/master/images/GFA2.Fig2.png) 
-/// While one has graphs in which vertex sequences actually overlap as above, one also frequently encounters models 
-/// in which there is no overlap (basically edge-labelled models captured in a vertex-labelled form). 
-/// This is captured by edges for which
-/// beg1 = end1 = x$ and beg2 = end2 = 0 (i.e. 0-length overlap of the end of segment 1 and the beginning of segment 2)!
+/// 
+/// * `begin segment 1` = 0 and `end segment 2` = y$ \
+///     or `begin segment 2` = 0 and `end segment 1` = x$ \
+///     (if the aligned segments are in the same orientation)
+/// *`begin segment 1` = 0 and `begin segment 2` = 0 \
+///     or `end segment 1` = x$ and `end segment 2` = y$ \
+///     (if the aligned segments are in opposite orientation)
+/// 
+/// # Examples
+/// 
+/// ```
+/// use rs_gfa2::gfa2::*;
+/// 
+/// // inizialize a simple edge 
+/// let simple_edge = Edge {
+///     id: "*".to_string(),
+///     sid1: "3+".to_string(),
+///     sid2: "65-".to_string(),
+///     beg1: "5329".to_string(),
+///     end1: "5376$".to_string(),
+///     beg2: "20".to_string(),
+///     end2: "67$".to_string(),
+///     alignment: "47M".to_string(),
+///     tag: vec![],
+/// };
+/// 
+/// // inizialize a different edge
+/// let different_edge = Edge {
+///     id: "1_to_5".to_string(),
+///     sid1: "1+".to_string(),
+///     sid2: "5+".to_string(),
+///     beg1: "0".to_string(),
+///     end1: "122$".to_string(),
+///     beg2: "2".to_string(),
+///     end2: "124".to_string(),
+///     alignment: "*".to_string(),
+///     tag: vec!["zz:Z:tag".to_string()],
+/// };
+/// 
+/// // inizialize an empty edge
+/// // this is allowed but the edge line will be  
+/// // considered not part of the GFA2 format
+/// let empty_edge = Edge {
+///     id: "".to_string(),
+///     sid1: "".to_string(),
+///     sid2: "".to_string(),
+///     beg1: "".to_string(),
+///     end1: "".to_string(),
+///     beg2: "".to_string(),
+///     end2: "".to_string(),
+///     alignment: "".to_string(),
+///     tag: vec![],
+/// };
+/// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Edge {
     pub id: String, // optional id, can be either * or id tag
@@ -168,17 +422,88 @@ impl Edge {
     }
 }
 
-/// While not a concept for pure DeBrujin or long-read assemblers, 
-/// it is the case that paired end data and external maps often order and orient contigs/vertices into scaffolds 
-/// with intervening gaps. 
-/// To this end we introduce a gap edge described in G-lines that give the estimated gap distance between the two segment sequences 
-/// and the variance of that estimate. 
-/// The gap is between the first segment at left and the second segment at right where the segments are oriented 
-/// according to their sign indicators. 
-/// The next integer gives the expected distance between the first and second segment in their respective orientations, 
-/// and the final field is either an integer giving the variance in this estimate or a * indicating the variance is unknown. 
-/// Relationships in E-lines are fixed and known, where as in a G-line, 
-/// the distance is an estimate and the line type is intended to allow one to define assembly scaffolds.
+impl fmt::Display for Edge {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "E\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            self.id,
+            self.sid1,
+            self.sid2,
+            self.beg1,
+            self.end1,
+            self.beg2,
+            self.end2,
+            self.alignment,
+            // this inline method is useful but add a tabspace at the end of the tag 
+            // creating so an incorrect string 
+            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
+        )
+    }
+}
+
+/// Returns a Gap line which is composed of:\
+///     * [`id`][string] field,\
+///     * [`segment 1 id`][string] field,\
+///     * [`segment 2 id`][string] field,\
+///     * [`distance`][string] field,\
+///     * [`variance`][string] field,\
+///     * and a [`tag`][vec] field
+/// 
+/// [string]: https://doc.rust-lang.org/std/string/struct.String.html
+/// 
+/// [vec]: https://doc.rust-lang.org/std/vec/struct.Vec.html
+/// 
+/// # Arguments
+/// 
+/// * `id` - A [`string`][string] slice,\
+///     representing the id associated to the current edge.
+/// * `segment 1 id` and `segment 2 id` - A pair of [`string`][string] slices, \
+///     representing an `id` that references to a pair of segments \
+///     in the local collection.
+/// * `distance` - A [`string`][string] slice, \
+///     representing the estimated gap distance between `segment 1` and `segment 2`. \
+/// * `variance` - A [`string`][string] slice, \
+///     representing the variance of the estimation about the gap distance.
+/// * `tag` - A [`vector of string`][vec]. 
+/// 
+/// # Examples
+/// 
+/// ```
+/// use rs_gfa2::gfa2::*;
+/// 
+/// // inizialize a simple gap 
+/// let simple_gap = Gap {
+///     id: "2_to_12".to_string(),
+///     sid1: "2-".to_string(),
+///     sid2: "12+".to_string(),
+///     dist: "500".to_string(),
+///     var: "50".to_string(),
+///     tag: vec![],
+/// };
+/// 
+/// // inizialize a different gap
+/// let different_gap = Gap {
+///     id: "1_to_11".to_string(),
+///     sid1: "1+".to_string(),
+///     sid2: "11-".to_string(),
+///     dist: "120".to_string(),
+///     var: "*".to_string(),
+///     tag: vec![],
+/// };
+/// 
+/// // inizialize an empty gap
+/// // this is allowed but the gap line will be  
+/// // considered not part of the GFA2 format
+/// let empty_gap = Gap {
+///     id: "".to_string(),
+///     sid1: "".to_string(),
+///     sid2: "".to_string(),
+///     dist: "".to_string(),
+///     var: "".to_string(),
+///     tag: vec![],
+/// };
+/// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Gap {
     pub id: String, // optional id, can be either * or id tag
@@ -209,24 +534,67 @@ impl Gap {
     }
 }
 
-/// A group encoding on a U- or O-line allows one to name and specify a subgraph of the overall graph. 
-/// Such a collection could for example be highlighted by a drawing program on command, 
-/// or might specify decisions about tours through the graph. 
-/// U-lines encode unordered collections and O-lines encode ordered collections (defined in the next paragraph), 
-/// which we alternatively call sets and paths, respectively. 
-/// The remainder of the line then consists of an optional ID for the collection followed by a non-empty list of ID's 
-/// referring to segments, edges, or other groups that are separated by single spaces 
-/// (i.e. the list is in a single column of the tab-delimited format). 
-/// In the case of paths every reference must be oriented, and not so in a set. 
-/// A group list may refer to another group recursively. 
-/// It is an error for a U-line and an O-line to have the same name.
-/// An unordered collection or set defined in a U-line refers to the subgraph induced by the vertices and edges in the collection 
-/// (i.e. one adds all edges between a pair of segments in the list and one adds all segments adjacent to edges in the list.) 
-/// An ordered collection defined in an O-line captures paths in the graph consisting of the listed objects 
-/// and the implied adjacent objects between consecutive objects in the list where the orientation of the objects 
-/// matters (e.g. the edge between two consecutive segments, the segment between two consecutive edges, etc.) 
-/// A set can contain a reference to a path, but not vice versa, 
-/// in which case the orientation of the objects in the path become irrelevant.
+impl fmt::Display for Gap {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "G\t{}\t{}\t{}\t{}\t{}\t{}",
+            self.id,
+            self.sid1,
+            self.sid2,
+            self.dist,
+            self.var,
+            // this inline method is useful but add a tabspace at the end of the tag 
+            // creating so an incorrect string 
+            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
+        )
+    }
+}
+
+/// Returns a O-Group line which is composed of:\
+///     * [`id`][string] field,\
+///     * [`reference field`][vec] field,\
+///     * and a [`tag`][vec] field
+/// 
+/// [string]: https://doc.rust-lang.org/std/string/struct.String.html
+/// 
+/// [vec]: https://doc.rust-lang.org/std/vec/struct.Vec.html
+/// 
+/// # Arguments
+/// 
+/// * `id` - A [`string`][string] slice,\
+///     representing the id associated to the current edge.
+/// * `reference field` - A [`vector of string`][vec] slice, \
+///     representing an `id`  followed by a non-empty list of 'id' \
+///     referring to `segments`, `edges` or other groups that are \
+///     separated by single spaces.
+/// * `tag` - A [`vector of string`][vec]. 
+/// 
+/// ## Note
+/// 
+/// `O-Groups` encode ordered collections 
+/// 
+/// # Examples
+/// 
+/// ```
+/// use rs_gfa2::gfa2::*;
+/// 
+/// // inizialize a simple o-group 
+/// let simple_o_group = GroupO {
+///     id: "2_to_12".to_string(),
+///     var_field: vec!["11+".to_string(), "11_to_13+".to_string(), "13+".to_string()],
+///     tag: vec!["xx:i:-1".to_string()],
+/// };
+/// 
+/// // inizialize an empty o-group 
+/// // this is allowed but the o-group line will be  
+/// // considered not part of the GFA2 format
+/// let empty_o_group = GroupO {
+///     id: "".to_string(),
+///     var_field: vec![],
+///     tag: vec![],
+/// };
+/// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct GroupO {
     // O-Group and U-Group are different only for one field
@@ -249,6 +617,66 @@ impl GroupO {
     }
 }
 
+impl fmt::Display for GroupO {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "O\t{}\t{}\t{}",
+            self.id,
+            // this inline method is useful but add a whitespace at the end of the var_field 
+            // creating so an incorrect string 
+            self.var_field.iter().fold(String::new(), |acc, str| acc + &str.to_string() + " "),
+            // this inline method is useful but add a tabspace at the end of the tag 
+            // creating so an incorrect string 
+            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
+        )
+    }
+}
+
+/// Returns a U-Group line which is composed of:\
+///     * [`id`][string] field,\
+///     * [`id field`][vec] field,\
+///     * and a [`tag`][vec] field
+/// 
+/// [string]: https://doc.rust-lang.org/std/string/struct.String.html
+/// 
+/// [vec]: https://doc.rust-lang.org/std/vec/struct.Vec.html
+/// 
+/// # Arguments
+/// 
+/// * `id` - A [`string`][string] slice,\
+///     representing the id associated to the current edge.
+/// * `id field` - A [`vector of string`][vec] slice, \
+///     representing an `id`  followed by a non-empty list of 'id' \
+///     referring to `segments`, `edges` or other groups that are \
+///     separated by single spaces.
+/// * `tag` - A [`vector of string`][vec]. 
+/// 
+/// ## Note
+/// 
+/// `U-Groups` encode unordered collections 
+/// 
+/// # Examples
+/// 
+/// ```
+/// use rs_gfa2::gfa2::*;
+/// 
+/// // inizialize a simple u-group 
+/// let simple_u_group = GroupU {
+///     id: "16sub".to_string(),
+///     var_field: vec!["2".to_string(), "3".to_string()],
+///     tag: vec![],
+/// };
+/// 
+/// // inizialize an empty u-group 
+/// // this is allowed but the u-group line will be  
+/// // considered not part of the GFA2 format
+/// let empty_u_group = GroupU {
+///     id: "".to_string(),
+///     var_field: vec![],
+///     tag: vec![],
+/// };
+/// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct GroupU {
     // O-Group and U-Group are different only for one field
@@ -271,6 +699,22 @@ impl GroupU {
     }
 }
 
+impl fmt::Display for GroupU {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "U\t{}\t{}\t{}",
+            self.id,
+            // this inline method is useful but add a whitespace at the end of the var_field 
+            // creating so an incorrect string 
+            self.var_field.iter().fold(String::new(), |acc, str| acc + &str.to_string() + " "),
+            // this inline method is useful but add a tabspace at the end of the tag 
+            // creating so an incorrect string 
+            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
+        )
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum Line {
     Header(Header),
@@ -284,25 +728,75 @@ pub enum Line {
     CustomRecord,
 }
 
-/// Like GFA, GFA2 is tab-delimited in that every lexical token is separated from the next by a single tab.
-/// Each record line must begin with a letter and lies on a single line with no white space before the first symbol. 
-/// The tokens that generate record lines are <header>, <segment>, <fragment>, <edge>, <gap>, and <group>. 
-/// Any line that does not begin with a recognized code (i.e. H, S, F, E, G, O, or U) can be ignored. 
-/// This will allow users to have additional record lines specific to their special processes. 
-/// Moreover, the suffix of any GFA2 record line may contain any number of user-specific SAM tags 
-/// which may be ignored by software designed to support the core standard. 
-/// Tags with lower-case letters are reserved for end-users.
-/// There is one name space for all identifiers for segments, edges, gaps, and groups. 
-/// External fragment ID's are assumed to be in a distinct name space. 
-/// It is an error for any identifier to be used twice in a defining context. 
-/// Note carefully that instead of an identifier, one can use a * for edges, gaps, and groups, 
-/// implying that an id is not needed as the item will not be referred to elsewhere in the file. 
-/// Moreover, almost all references to identifiers are oriented, by virtue of a post-fix + or - sign. 
-/// A +-sign indicates the object is in the orientation it was defined, and a --sign indicates it should be reverse-complemented.
+/// Returns a GFA2 object which is composed of:\
+///     * [`headers`][vec] field,\
+///     * [`segments`][vec] field,\
+///     * [`fragments`][vec] field,\
+///     * [`edges`][vec] field,\
+///     * [`gaps`][vec] field,\
+///     * [`o groups`][vec] field,\
+///     * [`u groups`][vec] field,
+/// 
+/// [string]: https://doc.rust-lang.org/std/string/struct.String.html
+/// 
+/// [vec]: https://doc.rust-lang.org/std/vec/struct.Vec.html
+/// 
+/// # Arguments
+/// 
+/// * `headers` - A [`vector of Header`][vec].
+/// * `segments` - A [`vector of Segment`][vec]. 
+/// * `fragments` - A [`vector of Fragment`][vec].
+/// * `edges` - A [`vector of Edge`][vec].
+/// * `gaps` - A [`vector of Gap`][vec].
+/// * `o groups` - A [`vector of OGroup`][vec].
+/// * `u groups` - A [`vector of UGroup`][vec].
+/// 
+/// # Examples
+/// 
+/// ```
+/// use rs_gfa2::gfa2::*;
+/// 
+/// // inizialize a simple gfa2 object 
+/// let mut gfa2 = GFA2::new();    
+/// gfa2.headers = vec![
+///     Header{
+///         version: "VN:Z:2.0".to_string(),
+///         tag: vec![],
+///     }
+/// ];
+/// gfa2.segments = vec![
+///     Segment {
+///         id: "1".to_string(),
+///         len: "8".to_string(),
+///         sequence: "CGATGCAA".to_string(),
+///         tag: vec![],
+///     }
+/// ];
+/// gfa2.fragments = vec![];
+/// gfa2.edges = vec![
+///     Edge {
+///         id: "*".to_string(),
+///         sid1: "1+".to_string(),
+///         sid2: "2+".to_string(),
+///         beg1: "3".to_string(),
+///         end1: "8$".to_string(),
+///         beg2: "0".to_string(),
+///         end2: "5".to_string(),
+///         alignment: "0,2,4".to_string(),
+///         tag: vec!["TS:i:2".to_string()],
+///     }
+/// ];
+/// gfa2.gaps = vec![];
+/// gfa2.groups_o = vec![];
+/// gfa2.groups_u = vec![];
+/// 
+/// // inizialize an empty GFA2 object 
+/// let empty_gfa2 = GFA2::new();
+/// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct GFA2 {
     // struct to hold the results of parsing a file; not actually a graph
-    // TODO: implement an handlegraph to hold the result of parsing a GFA2 file
+    // TODO: implement an handlegraph to hold the result of the parsing of a GFA2 file
     pub headers: Vec<Header>,
     pub segments: Vec<Segment>,
     pub fragments: Vec<Fragment>,
@@ -323,124 +817,6 @@ impl GFA2 {
             groups_o: vec![],
             groups_u: vec![],
         }
-    }
-}
-
-use std::fmt;
-
-impl fmt::Display for Header {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "H\t{}\t{}",
-            self.version,
-            // this inline method is useful but add a tabspace at the end of the tag 
-            // creating so an incorrect string 
-            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
-        )
-    }
-}
-
-impl fmt::Display for Segment {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "S\t{}\t{}\t{}\t{}",
-            self.id,
-            self.len,
-            self.sequence,
-            // this inline method is useful but add a tabspace at the end of the tag 
-            // creating so an incorrect string 
-            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
-        )
-    }
-}
-
-impl fmt::Display for Fragment {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "F\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
-            self.id,
-            self.ext_ref,
-            self.sbeg,
-            self.send,
-            self.fbeg,
-            self.fend,
-            self.alignment,
-            // this inline method is useful but add a tabspace at the end of the tag 
-            // creating so an incorrect string 
-            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
-        )
-    }
-}
-
-impl fmt::Display for Edge {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "E\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
-            self.id,
-            self.sid1,
-            self.sid2,
-            self.beg1,
-            self.end1,
-            self.beg2,
-            self.end2,
-            self.alignment,
-            // this inline method is useful but add a tabspace at the end of the tag 
-            // creating so an incorrect string 
-            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
-        )
-    }
-}
-
-impl fmt::Display for Gap {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "G\t{}\t{}\t{}\t{}\t{}\t{}",
-            self.id,
-            self.sid1,
-            self.sid2,
-            self.dist,
-            self.var,
-            // this inline method is useful but add a tabspace at the end of the tag 
-            // creating so an incorrect string 
-            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
-        )
-    }
-}
-
-impl fmt::Display for GroupO {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "O\t{}\t{}\t{}",
-            self.id,
-            // this inline method is useful but add a whitespace at the end of the var_field 
-            // creating so an incorrect string 
-            self.var_field.iter().fold(String::new(), |acc, str| acc + &str.to_string() + " "),
-            // this inline method is useful but add a tabspace at the end of the tag 
-            // creating so an incorrect string 
-            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
-        )
-    }
-}
-
-impl fmt::Display for GroupU {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "U\t{}\t{}\t{}",
-            self.id,
-            // this inline method is useful but add a whitespace at the end of the var_field 
-            // creating so an incorrect string 
-            self.var_field.iter().fold(String::new(), |acc, str| acc + &str.to_string() + " "),
-            // this inline method is useful but add a tabspace at the end of the tag 
-            // creating so an incorrect string 
-            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
-        )
     }
 }
 
@@ -467,7 +843,13 @@ mod tests {
     use crate::parser::*;
 
     #[test]
-    fn print_GFA2_file() {
+    fn print_empty_gfa2_file() {
+        let gfa2 = GFA2::new();
+        println!("{}", gfa2);
+    }
+        
+    #[test]
+    fn print_gfa2_file() {
         let parser = parse_gfa(&PathBuf::from("test\\gfas\\gfa2_files\\irl.gfa"));
 
         match parser {
@@ -489,13 +871,104 @@ mod tests {
     }
 
     #[test]
-    fn write_GFA2_file() {
-        // TODO: FIXME! add a way to save the content of the file
-        let irl = parse_gfa(&PathBuf::from("test\\gfas\\gfa2_files\\irl.gfa"));
-        // save the content of irl on output_irl.gfa
-        // ...
-        // control the content of output_irl_gfa
-        let test = parse_gfa(&PathBuf::from("test\\gfas\\output_file\\output_irl.gfa"));
-        assert_eq!(irl, test);  
+    fn print_gfa2_file_alternative() {
+        let mut gfa2 = GFA2::new();
+        
+        gfa2.headers = vec![
+            Header{
+                version: "VN:Z:2.0".to_string(),
+                tag: vec![],
+            }
+        ];
+        gfa2.segments = vec![
+            Segment {
+                id: "1".to_string(),
+                len: "8".to_string(),
+                sequence: "CGATGCAA".to_string(),
+                tag: vec![],
+            },
+            Segment {
+                id: "2".to_string(),
+                len: "10".to_string(),
+                sequence: "TGCAAAGTAC".to_string(),
+                tag: vec![],
+            },
+            Segment {
+                id: "3".to_string(),
+                len: "21".to_string(),
+                sequence: "TGCAACGTATAGACTTGTCAC".to_string(),
+                tag: vec!["RC:i:4".to_string()],
+            },
+            Segment {
+                id: "4".to_string(),
+                len: "7".to_string(),
+                sequence: "TATATGC".to_string(),
+                tag: vec![],
+            },
+            Segment {
+                id: "5".to_string(),
+                len: "8".to_string(),
+                sequence: "CGATGATA".to_string(),
+                tag: vec![],
+            },
+            Segment {
+                id: "6".to_string(),
+                len: "4".to_string(),
+                sequence: "ATGA".to_string(),
+                tag: vec![],
+            },
+        ];
+        gfa2.fragments = vec![];
+        gfa2.edges = vec![
+            Edge {
+                id: "*".to_string(),
+                sid1: "1+".to_string(),
+                sid2: "2+".to_string(),
+                beg1: "3".to_string(),
+                end1: "8$".to_string(),
+                beg2: "0".to_string(),
+                end2: "5".to_string(),
+                alignment: "0,2,4".to_string(),
+                tag: vec!["TS:i:2".to_string()],
+            },
+            Edge {
+                id: "*".to_string(),
+                sid1: "3+".to_string(),
+                sid2: "2+".to_string(),
+                beg1: "21$".to_string(),
+                end1: "21$".to_string(),
+                beg2: "0".to_string(),
+                end2: "0".to_string(),
+                alignment: "0M".to_string(),
+                tag: vec![],
+            },
+            Edge {
+                id: "*".to_string(),
+                sid1: "3+".to_string(),
+                sid2: "4-".to_string(),
+                beg1: "16".to_string(),
+                end1: "21$".to_string(),
+                beg2: "3".to_string(),
+                end2: "7$".to_string(),
+                alignment: "1M1D3M".to_string(),
+                tag: vec![],
+            },
+            Edge {
+                id: "*".to_string(),
+                sid1: "4-".to_string(),
+                sid2: "5+".to_string(),
+                beg1: "0".to_string(),
+                end1: "0".to_string(),
+                beg2: "0".to_string(),
+                end2: "0".to_string(),
+                alignment: "0M".to_string(),
+                tag: vec![],
+            },
+        ];
+        gfa2.gaps = vec![];
+        gfa2.groups_o = vec![];
+        gfa2.groups_u = vec![];
+
+        println!("{}", gfa2);
     }
 }
