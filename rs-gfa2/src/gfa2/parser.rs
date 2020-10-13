@@ -376,7 +376,7 @@ pub fn parse_gfa(path: &PathBuf) -> Option<GFA2> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parser_gfa2::*;
+    use super::*;
 
     #[test]
     fn can_parse_blank_header() {

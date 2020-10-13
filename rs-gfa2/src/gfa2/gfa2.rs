@@ -2,7 +2,7 @@
 use std::fmt;
 
 /// Returns an Header line which is composed of:\
-///     * [`version`][string] field,\ 
+///     * [`version`][string] field,\
 ///     * and a [`tag`][vec] field
 /// 
 /// [string]: https://doc.rust-lang.org/std/string/struct.String.html
@@ -839,35 +839,11 @@ impl fmt::Display for GFA2 {
 #[cfg(test)] 
 mod tests {
     use super::*;
-    use std::path::PathBuf;
-    use crate::parser_gfa2::*;
 
     #[test]
     fn print_empty_gfa2_file() {
         let gfa2 = GFA2::new();
         println!("{}", gfa2);
-    }
-        
-    #[test]
-    fn print_gfa2_file() {
-        let parser = parse_gfa(&PathBuf::from("test\\gfas\\gfa2_files\\irl.gfa"));
-
-        match parser {
-            None => panic!("Error parsing the file"),
-            Some(parser) => {
-                let mut gfa2 = GFA2::new();
-                
-                gfa2.headers = parser.headers;
-                gfa2.segments = parser.segments;
-                gfa2.fragments = parser.fragments;
-                gfa2.edges = parser.edges;
-                gfa2.gaps = parser.gaps;
-                gfa2.groups_o = parser.groups_o;
-                gfa2.groups_u = parser.groups_u;
-
-                println!("{}", gfa2);
-            }
-        }
     }
 
     #[test]

@@ -59,27 +59,23 @@ fn parse_overlap(input: &str) -> IResult<&str, String> {
     Ok((i, overlap.to_string()))
 }
 
-/*
-fn parse_optional(input: &str) -> IResult<&str, OptionalField> {
-    let col = tag(":");
-    let (i, opt_tag) = re_find!(input, r"^[A-Za-Z][A-Za-z0-9]")?;
-    let (i, opt_type) = preceded(col, one_of("AifZJHB"))(i)?;
-
-    let (i, opt_val) = match opt_type {
-        'A' => ,
-        'i' => true,
-        'f' => true,
-        'Z' => true,
-        'J' => true,
-        'H' => true,
-        'B' => true,
-    }
-
-    // let (i, opt_typ) = terminated(one_of("AifZJHB"), col);
-    // let (i, opt_tag) = re_find!(input, r"[A-Za-Z][A-Za-z0-9]")?;
-    // let (
+/// function that parses the optional fields of the segment tag
+fn parse_optional_fields_segment(input: &str) -> IResult<&str, String> {
+    let (i, opt) = re_find!(input, r"(\t(((LN|RC|FC|KC):i:[-+]?[0-9]+)|(SH:H:[0-9A-F]+)|(UR:Z:[ -~]+)))*")?;
+    Ok((i, opt.to_string()))
 }
-*/
+
+/// function that parses the optional fields of the link tag
+fn parse_optional_fields_link(input: &str) -> IResult<&str, String> {
+    let (i, opt) = re_find!(input, r"(\t(((MQ|NM|RC|FC|KC):i:[-+]?[0-9]+)|(ID:Z:[ -~]+)))*")?;
+    Ok((i, opt.to_string()))
+}
+
+/// function that parses the optional fields of the containment tag
+fn parse_optional_fields_contaiment(input: &str) -> IResult<&str, String> {
+    let (i, opt) = re_find!(input, r"(\t(((NM|RC):i:[-+]?[0-9]+)|(ID:Z:[ -~]+)))*")?;
+    Ok((i, opt.to_string()))
+}
 
 /// function that parses the segment tag
 fn parse_segment(input: &str) -> IResult<&str, Segment> {
@@ -88,18 +84,14 @@ fn parse_segment(input: &str) -> IResult<&str, Segment> {
     let (i, name) = terminated(parse_name, &tab)(input)?;
     let (i, seq) = parse_sequence(i)?;
 
-    // TODO branch on the length of the remaining input to read the rest
+    let (i, opt) = parse_optional_fields_segment(i)?;
+    let mut opt_value: Vec<String> = opt.split_terminator("\t").map(String::from).collect();
+    opt_value.retain(|opt| !opt.is_empty());
 
     let result = Segment {
         name: name,
         sequence: seq,
-
-        segment_len: None,
-        read_count: None,
-        fragment_count: None,
-        kmer_count: None,
-        checksum: None,
-        uri: None,
+        optional_fields: opt_value,
     };
 
     Ok((i, result))
@@ -118,19 +110,17 @@ fn parse_link(input: &str) -> IResult<&str, Link> {
     let (i, to_orient) = orient(i)?;
     let (i, overlap) = parse_overlap(i)?;
 
+    let (i, opt) = parse_optional_fields_link(i)?;
+    let mut opt_value: Vec<String> = opt.split_terminator("\t").map(String::from).collect();
+    opt_value.retain(|opt| !opt.is_empty());
+
     let result = Link {
         from_segment,
         from_orient,
         to_segment,
         to_orient,
         overlap,
-
-        map_quality: None,
-        num_mismatches: None,
-        read_count: None,
-        fragment_count: None,
-        kmer_count: None,
-        edge_id: None,
+        optional_fields: opt_value,
     };
 
     Ok((i, result))
@@ -149,7 +139,11 @@ fn parse_containment(input: &str) -> IResult<&str, Containment> {
     let (i, contained_orient) = orient(i)?;
     let (i, pos) = terminated(digit0, &tab)(i)?;
 
-    let (i, overlap) = terminated(parse_overlap, &tab)(i)?;
+    let (i, overlap) = parse_overlap(i)?;
+
+    let (i, opt) = parse_optional_fields_contaiment(i)?;
+    let mut opt_value: Vec<String> = opt.split_terminator("\t").map(String::from).collect();
+    opt_value.retain(|opt| !opt.is_empty());
 
     let result = Containment {
         container_name,
@@ -158,10 +152,7 @@ fn parse_containment(input: &str) -> IResult<&str, Containment> {
         contained_orient,
         overlap,
         pos: pos.parse::<usize>().unwrap(),
-    
-        read_coverage: None,
-        num_mismatches: None,
-        edge_id: None,
+        optional_fields: opt_value,
     };
 
     Ok((i, result))
@@ -209,7 +200,8 @@ fn parse_line(line: &str) -> IResult<&str, Line> {
             let (i, p) = parse_path(i)?;
             Ok((i, Line::Path(p)))
         }
-        _ => Ok((i, Line::Comment)), // ignore unrecognized headers for now
+        // found error
+        _ => panic!("Error! the line it's not correct"), 
     }
 }
 
@@ -298,81 +290,109 @@ mod tests {
         };
 
         match parse_header(hdr) {
-            Err(err) => {
-                panic!("{:?}", err);
-            }
+            Err(err) => panic!("{:?}", err),
             Ok((_res, h)) => assert_eq!(h, hdr_),
         }
     }
 
     #[test]
     fn can_parse_segment() {
-        let seg = "11	ACCTT	";
+        let seg = "11\tACCTT";
         let seg_ = Segment {
             name: "11".to_string(),
             sequence: "ACCTT".to_string(),
-
-            segment_len: None,
-            read_count: None,
-            fragment_count: None,
-            kmer_count: None,
-            checksum: None,
-            uri: None,
+            optional_fields: vec![],
         };
         match parse_segment(seg) {
-            Err(err) => {
-                panic!("{:?}", err);
-            }
+            Err(err) => panic!("{:?}", err),
+            Ok((_res, s)) => assert_eq!(s, seg_),
+        }
+    }
+
+    #[test]
+    fn can_parse_segment_with_optional_fields() {
+        let seg = "2643\tGCAAATCGCCAGCGCCAGCAACGGATAGTTAATTTTCATGCCTTATCTCCACC\tLN:i:53\tKC:i:6";
+        let seg_ = Segment {
+            name: "2643".to_string(),
+            sequence: "GCAAATCGCCAGCGCCAGCAACGGATAGTTAATTTTCATGCCTTATCTCCACC".to_string(),
+            optional_fields: vec!["LN:i:53".to_string(), "KC:i:6".to_string()],
+        };
+        match parse_segment(seg) {
+            Err(err) => panic!("{:?}", err),
             Ok((_res, s)) => assert_eq!(s, seg_),
         }
     }
 
     #[test]
     fn can_parse_link() {
-        let link = "11	+	12	-	4M	";
+        let link = "11\t+\t12\t-\t4M";
         let link_ = Link {
             from_segment: "11".to_string(),
             from_orient: Orientation::Forward,
             to_segment: "12".to_string(),
             to_orient: Orientation::Backward,
             overlap: "4M".to_string(),
-
-            map_quality: None,
-            num_mismatches: None,
-            read_count: None,
-            fragment_count: None,
-            kmer_count: None,
-            edge_id: None,
+            optional_fields: vec![],
         };
         match parse_link(link) {
-            Err(err) => {
-                panic!("{:?}", err);
-            }
+            Err(err) => panic!("{:?}", err),
+            Ok((_res, l)) => assert_eq!(l, link_),
+        }
+    }
+
+    #[test]
+    fn can_parse_link_with_optional_fields() {
+        let link = "1\t+\t2\t+\t12M\tID:Z:1_to_2";
+        let link_ = Link {
+            from_segment: "1".to_string(),
+            from_orient: Orientation::Forward,
+            to_segment: "2".to_string(),
+            to_orient: Orientation::Forward,
+            overlap: "12M".to_string(),
+            optional_fields: vec!["ID:Z:1_to_2".to_string()],
+        };
+        match parse_link(link) {
+            Err(err) => panic!("{:?}", err),
             Ok((_res, l)) => assert_eq!(l, link_),
         }
     }
 
     #[test]
     fn can_parse_containment() {
-        let cont = "1\t-\t2\t+\t110\t100M	";
+        let cont = "1\t-\t2\t+\t110\t100M";
 
         let cont_ = Containment {
             container_name: "1".to_string(),
             container_orient: Orientation::Backward,
             contained_name: "2".to_string(),
             contained_orient: Orientation::Forward,
-            overlap: "100M".to_string(),
-
             pos: 110,
-            read_coverage: None,
-            num_mismatches: None,
-            edge_id: None,
+            overlap: "100M".to_string(),
+            optional_fields: vec![],
         };
 
         match parse_containment(cont) {
-            Err(err) => {
-                panic!("{:?}", err);
-            }
+            Err(err) => panic!("{:?}", err),
+            Ok((_res, c)) => assert_eq!(c, cont_),
+        }
+    }
+
+    #[test]
+    fn can_parse_containment_with_optional_fields() {
+        let cont = "1\t+\t5\t+\t12\t120M\tID:Z:1_to_5";
+
+        let cont_ = Containment {
+            container_name: "1".to_string(),
+            container_orient: Orientation::Forward,
+            contained_name: "5".to_string(),
+            contained_orient: Orientation::Forward,
+            pos: 12,
+            overlap: "120M".to_string(),
+            optional_fields: vec!["ID:Z:1_to_5".to_string()],
+        };
+
+        match parse_containment(cont) {
+            Err(err) => panic!("{:?}", err),
             Ok((_res, c)) => assert_eq!(c, cont_),
         }
     }
@@ -388,67 +408,8 @@ mod tests {
         };
 
         match parse_path(path) {
-            Err(err) => {
-                panic!("{:?}", err);
-            }
+            Err(err) => panic!("{:?}", err),
             Ok((_res, p)) => assert_eq!(p, path_),
         }
-    }
-
-    #[test]
-    fn can_parse_lines() {
-        let input = "H	VN:Z:1.0
-S	1	CAAATAAG
-S	2	A
-S	3	G
-S	4	T
-S	5	C
-L	1	+	2	+	0M
-L	1	+	3	+	0M
-P	x	1+,3+,5+,6+,8+,9+,11+,12+,14+,15+	8M,1M,1M,3M,1M,19M,1M,4M,1M,11M";
-
-        let lines = input.lines();
-        let mut gfa = GFA::new();
-
-        let gfa_correct = GFA {
-            headers: vec![
-                Header::new("VN:Z:1.0"),
-            ],
-            segments: vec![
-                Segment::new("1", "CAAATAAG"),
-                Segment::new("2", "A"),
-                Segment::new("3", "G"),
-                Segment::new("4", "T"),
-                Segment::new("5", "C"),
-            ],
-            links: vec![
-                Link::new("1", Orientation::Forward, "2", Orientation::Forward, "0M"),
-                Link::new("1", Orientation::Forward, "3", Orientation::Forward, "0M"),
-            ],
-            paths: vec![Path::new(
-                "x",
-                vec![
-                    "1+", "3+", "5+", "6+", "8+", "9+", "11+", "12+", "14+", "15+",
-                ],
-                vec!["8M", "1M", "1M", "3M", "1M", "19M", "1M", "4M", "1M", "11M"],
-            )],
-            containments: vec![],
-        };
-
-        for l in lines {
-            let p = parse_line(l);
-
-            if let Ok((_, Line::Header(h))) = p {
-                gfa.headers.push(h);
-            } else if let Ok((_, Line::Segment(s))) = p {
-                gfa.segments.push(s);
-            } else if let Ok((_, Line::Link(l))) = p {
-                gfa.links.push(l);
-            } else if let Ok((_, Line::Path(pt))) = p {
-                gfa.paths.push(pt);
-            }
-        }
-
-        assert_eq!(gfa_correct, gfa);
     }
 }

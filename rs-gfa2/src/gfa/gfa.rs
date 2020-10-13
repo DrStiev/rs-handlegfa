@@ -48,27 +48,10 @@ impl fmt::Display for Header {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub enum OptionalFieldValue {
-    PrintableChar(char),
-    SignedInt(i64),
-    Float(f32),
-    PrintableString(String),
-    JSON(String),
-    ByteArray(Vec<u8>),
-    IntArray(Vec<i32>),
-    FloatArray(Vec<f32>),
-}
-
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct OptionalField {
-    pub tag: String,
-    pub content: OptionalFieldValue,
-}
-
 /// Returns a Segment line which is composed of:\
 ///     * [`name`][string] field,\
 ///     * [`sequence`][string] field,\
+///     * [`optional fields`][vec] fields
 /// 
 /// [string]: https://doc.rust-lang.org/std/string/struct.String.html
 /// 
@@ -91,6 +74,7 @@ pub struct OptionalField {
 /// let simple_segment = Segment {
 ///     name: "3".to_string(),
 ///     sequence: "TGCAACGTATAGACTTGTCAC".to_string(),
+///     optional_fields: vec![],
 /// };
 /// 
 /// // inizialize an empty segment
@@ -99,6 +83,7 @@ pub struct OptionalField {
 /// let empty_segment = Segment {
 ///     name: "".to_string(),
 ///     sequence: "".to_string(),
+///     optional_fields: vec![],
 /// };
 /// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
@@ -106,26 +91,16 @@ pub struct Segment {
     pub name: String,
     pub sequence: String,
 
-    pub segment_len: Option<i64>,
-    pub read_count: Option<i64>,
-    pub fragment_count: Option<i64>,
-    pub kmer_count: Option<i64>,
-    pub checksum: Option<u8>,
-    pub uri: Option<String>,
+    pub optional_fields: Vec<String>,
 }
 
 impl Segment {
-    pub fn new(name: &str, sequence: &str) -> Segment {
+    pub fn new(name: &str, sequence: &str, optional_fields: Vec<&str>) -> Segment {
         Segment {
             name: name.to_string(),
             sequence: sequence.to_string(),
 
-            segment_len: None,
-            read_count: None,
-            fragment_count: None,
-            kmer_count: None,
-            checksum: None,
-            uri: None,
+            optional_fields: optional_fields.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
         }
     }
 }
@@ -134,16 +109,11 @@ impl fmt::Display for Segment {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "S\t{}\t{}\t{:?}\t{:?}\t{:?}\t{:?}\t{:?}\t{:?}",
+            "S\t{}\t{}\t{}",
             self.name,
             self.sequence,
             
-            self.segment_len,
-            self.read_count,
-            self.fragment_count,
-            self.kmer_count,
-            self.checksum,
-            self.uri,
+            self.optional_fields.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
         )
     }
 }
@@ -168,7 +138,8 @@ impl Orientation {
 ///     * [`from orient`][string] field,\
 ///     * [`to segment`][string] field,\
 ///     * [`to orient`][string] field,\
-///     * [`overlap`][string] field
+///     * [`overlap`][string] field,\
+///     * [`optional fields][vec] fields,
 /// 
 /// [string]: https://doc.rust-lang.org/std/string/struct.String.html
 /// 
@@ -200,6 +171,7 @@ impl Orientation {
 ///     to_segment: "2".to_string(),
 ///     to_orient: "+".to_orient(),
 ///     overlap: "5M".to_string(),
+///     optional_fields: vec![], 
 /// };
 /// 
 /// // inizialize an empty link
@@ -211,6 +183,7 @@ impl Orientation {
 ///     to_segment: "".to_string(),
 ///     to_orient: "".to_orient(),
 ///     overlap: "".to_string(),
+///     optional_fields: vec![],
 /// };
 /// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
@@ -221,12 +194,7 @@ pub struct Link {
     pub to_orient: Orientation,
     pub overlap: String,
 
-    pub map_quality: Option<i64>,
-    pub num_mismatches: Option<i64>,
-    pub read_count: Option<i64>,
-    pub fragment_count: Option<i64>,
-    pub kmer_count: Option<i64>,
-    pub edge_id: Option<String>,
+    pub optional_fields: Vec<String>,
 }
 
 impl Link {
@@ -236,6 +204,7 @@ impl Link {
         to_segment: &str,
         to_orient: Orientation,
         overlap: &str,
+        optional_fields: Vec<&str>,
     ) -> Link {
         Link {
             from_segment: from_segment.to_string(),
@@ -244,12 +213,7 @@ impl Link {
             to_orient: to_orient,
             overlap: overlap.to_string(),
 
-            map_quality: None,
-            num_mismatches: None,
-            read_count: None,
-            fragment_count: None,
-            kmer_count: None,
-            edge_id: None,
+            optional_fields: optional_fields.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
         }
     }
 }
@@ -258,19 +222,14 @@ impl fmt::Display for Link {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "L\t{}\t{:?}\t{}\t{:?}\t{}\t{:?}\t{:?}\t{:?}\t{:?}\t{:?}\t{:?}",
+            "L\t{}\t{:?}\t{}\t{:?}\t{}\t{}",
             self.from_segment,
             self.from_orient,
             self.to_segment,
             self.to_orient,
             self.overlap,
 
-            self.map_quality,
-            self.num_mismatches,
-            self.read_count,
-            self.fragment_count,
-            self.kmer_count,
-            self.edge_id,
+            self.optional_fields.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
         )
     }
 }
@@ -281,7 +240,8 @@ impl fmt::Display for Link {
 ///     * [`contained name`][string] field,\
 ///     * [`contained orient`][string] field,\
 ///     * [`position`][string] field,\
-///     * [`overlap`][string] field
+///     * [`overlap`][string] field,\
+///     * [`optional fields`][vec] fields,
 /// 
 /// [string]: https://doc.rust-lang.org/std/string/struct.String.html
 /// 
@@ -315,6 +275,7 @@ impl fmt::Display for Link {
 ///     contained_orientation: "+".to_orient(),
 ///     pos: "12". to_string(),
 ///     overlap: "120M".to_string(),
+///     optional_fields> vec![],
 /// };
 /// 
 /// // inizialize an empty containment
@@ -327,6 +288,7 @@ impl fmt::Display for Link {
 ///     contained_orientation: "".to_orient(),
 ///     pos: "". to_string(),
 ///     overlap: "".to_string()
+///     optional_fields> vec![],
 /// };
 /// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
@@ -338,16 +300,14 @@ pub struct Containment {
     pub pos: usize,
     pub overlap: String,
 
-    pub read_coverage: Option<i64>,
-    pub num_mismatches: Option<i64>,
-    pub edge_id: Option<String>,
+    pub optional_fields: Vec<String>,
 }
 
 impl fmt::Display for Containment {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "C\t{}\t{:?}\t{}\t{:?}\t{}\t{}\t{:?}\t{:?}\t{:?}",
+            "C\t{}\t{:?}\t{}\t{:?}\t{}\t{}\t{}",
             self.container_name,
             self.container_orient,
             self.contained_name,
@@ -355,17 +315,15 @@ impl fmt::Display for Containment {
             self.pos,
             self.overlap,
 
-            self.read_coverage,
-            self.num_mismatches,
-            self.edge_id,
+            self.optional_fields.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
         )
     }
 }
 
 /// Returns a Path line which is composed of:\
 ///     * [`path name`][string] field,\
-///     * [`segments names`][vec] field,\
-///     * [`overlaps`][vec] field
+///     * [`segments names`][vec] fields,\
+///     * [`overlaps`][vec] fields
 /// 
 /// [string]: https://doc.rust-lang.org/std/string/struct.String.html
 /// 
@@ -536,8 +494,6 @@ impl fmt::Display for GFA {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::PathBuf;
-    use crate::parser_gfa::*;
 
     #[test]
     fn print_empty_gfa_file() {
@@ -552,15 +508,15 @@ mod tests {
                 Header::new("VN:Z:1.0"),
             ],
             segments: vec![
-                Segment::new("1", "CAAATAAG"),
-                Segment::new("2", "A"),
-                Segment::new("3", "G"),
-                Segment::new("4", "T"),
-                Segment::new("5", "C"),
+                Segment::new("1", "CAAATAAG", vec![]),
+                Segment::new("2", "A", vec![]),
+                Segment::new("3", "G", vec![]),
+                Segment::new("4", "T", vec![]),
+                Segment::new("5", "C", vec![]),
             ],
             links: vec![
-                Link::new("1", Orientation::Forward, "2", Orientation::Forward, "0M"),
-                Link::new("1", Orientation::Forward, "3", Orientation::Forward, "0M"),
+                Link::new("1", Orientation::Forward, "2", Orientation::Forward, "0M", vec![]),
+                Link::new("1", Orientation::Forward, "3", Orientation::Forward, "0M", vec![]),
             ],
             paths: vec![Path::new(
                 "x",

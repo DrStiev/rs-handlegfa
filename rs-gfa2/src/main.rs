@@ -1,33 +1,22 @@
-#[macro_use]
 extern crate regex;
 
 #[macro_use]
 extern crate clap;
 
-/// import local libraries
 #[path = "gfa/gfa.rs"]
 mod gfa; 
-use gfa::*;
+#[path = "gfa2/gfa2.rs"]
+mod gfa2;
+
 #[path = "gfa/parser.rs"]
 mod parser_gfa; 
-use parser_gfa::*;
+#[path = "gfa2/parser.rs"]
+mod parser_gfa2;
+
 #[path = "gfa/test.rs"]
 mod test_gfa; 
-use test_gfa::*;
-
-/// import local libraries
-#[path = "gfa2/gfa2.rs"]
-mod gfa2; 
-use gfa2::*;
-#[path = "gfa2/parser.rs"]
-mod parser_gfa2; 
-use parser_gfa2::*;
 #[path = "gfa2/test.rs"]
 mod test_gfa2; 
-use test_gfa2::*;
-
-/// import the library to handle OS path
-use std::path::{Path, PathBuf};
 
 fn main() {
 
@@ -52,13 +41,13 @@ fn main() {
     // required we could have used an 'if let' to conditionally get the value)
     let file = matches.value_of("INPUT").unwrap();
 
-    let filename = Path::new(file.clone()).file_name().unwrap();
+    let filename = std::path::Path::new(file.clone()).file_name().unwrap();
 
     match matches.value_of("FORMAT").unwrap() {
         "gfa" => {
             println!("Checking the file: {:?}", filename);
             
-            let gfa = parser_gfa::parse_gfa(&PathBuf::from(file));
+            let gfa = parser_gfa::parse_gfa(&std::path::PathBuf::from(file));
             match gfa {
                 // TODO: FIX ME SENPAI! I AM NEVER USED :( 
                 None => println!("Error parsing the file {:?} as a GFA1 file", filename),
@@ -68,7 +57,7 @@ fn main() {
         "gfa2" => {
             println!("Checking the file: {:?}", filename);
             
-            let gfa = parser_gfa::parse_gfa(&PathBuf::from(file));
+            let gfa = parser_gfa2::parse_gfa(&std::path::PathBuf::from(file));
             match gfa {
                 // TODO: FIX ME SENPAI! I AM NEVER USED :(
                 None => println!("Error parsing the file {:?} as a GFA2 file", filename),
