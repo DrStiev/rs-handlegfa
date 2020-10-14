@@ -133,6 +133,16 @@ impl Orientation {
     }
 }
 
+impl fmt::Display for Orientation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let orient = match self {
+            Self::Backward => "-",
+            Self::Forward => "+",
+        };
+        write!(f, "{}",orient)
+    }
+}
+
 /// Returns a Link line which is composed of:\
 ///     * [`from segment`][string] field,\
 ///     * [`from orient`][string] field,\
@@ -222,7 +232,7 @@ impl fmt::Display for Link {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "L\t{}\t{:?}\t{}\t{:?}\t{}\t{}",
+            "L\t{}\t{}\t{}\t{}\t{}\t{}",
             self.from_segment,
             self.from_orient,
             self.to_segment,
@@ -307,7 +317,7 @@ impl fmt::Display for Containment {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "C\t{}\t{:?}\t{}\t{:?}\t{}\t{}\t{}",
+            "C\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
             self.container_name,
             self.container_orient,
             self.contained_name,
@@ -481,7 +491,7 @@ impl fmt::Display for GFA {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f, 
-            "{}\n{}\n{}\n{}\n{}",
+            "{}{}{}{}{}",
             self.headers.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
             self.segments.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
             self.links.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
@@ -520,9 +530,7 @@ mod tests {
             ],
             paths: vec![Path::new(
                 "x",
-                vec![
-                    "1+", "3+", "5+", "6+", "8+", "9+", "11+", "12+", "14+", "15+",
-                ],
+                vec!["1+", "3+", "5+", "6+", "8+", "9+", "11+", "12+", "14+", "15+"],
                 vec!["8M", "1M", "1M", "3M", "1M", "19M", "1M", "4M", "1M", "11M"],
             )],
             containments: vec![],
