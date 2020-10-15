@@ -13,34 +13,35 @@ use std::{
 };
 
 use crate::gfa2::*;
+use crate::error::GFAError;
 
 /// function that parses the id tag (added the optional vector part)
 fn parse_id(input: &str) -> IResult<&str, String> {
-    let (i, id) = re_find!(input, r"[!-~]+([ ][!-~]+)*")?;
+    let (i, id) = re_find!(input, r"^([!-~]+([ ][!-~]+)*)")?;
     Ok((i, id.to_string()))
 }
 
 /// function that parses the optional id tag
 fn parse_opt_id(input: &str) -> IResult<&str, String> {
-    let(i, opt_id) = re_find!(input, r"[!-~]+|\*")?;
+    let(i, opt_id) = re_find!(input, r"^([!-~]+|\*)")?;
     Ok((i, opt_id.to_string()))
 }
 
 /// function that parses the ref tag (added the optional vector part)
 fn parse_ref(input: &str) -> IResult<&str, String> {
-    let(i, ref_id) = re_find!(input, r"[!-~]+[+-]([ ][!-~]+[+-])*")?;
+    let(i, ref_id) = re_find!(input, r"^([!-~]+[+-]([ ][!-~]+[+-])*)")?;
     Ok((i, ref_id.to_string()))
 }
 
 /// function that parses the tag element (this field is optional)
 fn parse_tag(input: &str) -> IResult<&str, String> {
-    let (i, seq) = re_find!(input, r"(\t[A-Za-z0-9][A-Za-z0-9]:[ABHJZif]:[ -~]*)*")?;
+    let (i, seq) = re_find!(input, r"^(\t[A-Za-z0-9][A-Za-z0-9]:[ABHJZif]:[ -~]*)*")?;
     Ok((i, seq.to_string()))
 }
 
 /// function that parses the sequence element
 fn parse_sequence(input: &str) -> IResult<&str, String> {
-    let (i, seq) = re_find!(input, r"\*|[!-~]+")?;
+    let (i, seq) = re_find!(input, r"^(\*|[!-~]+)")?;
     Ok((i, seq.to_string()))
 }
 
@@ -50,31 +51,31 @@ fn parse_alignment(input: &str) -> IResult<&str, String> {
     // * "empty"
     // ([0-9]+[MDIP])+ CIGAR alignment
     // \-?[0-9]+(,\-?[0-9]+)* trace alignment
-    let (i, seq) = re_find!(input, r"\*|([0-9]+[MDIP])+|(\-?[0-9]+(,\-?[0-9]+)*)")?; 
+    let (i, seq) = re_find!(input, r"^(\*|([0-9]+[MDIP])+|(\-?[0-9]+(,\-?[0-9]+)*))")?; 
     Ok((i, seq.to_string()))
 }
 
 /// function that parses the pos tag
 fn parse_pos(input: &str) -> IResult<&str, String> {
-    let(i, pos) = re_find!(input, r"[!-~]+\$?")?;
+    let(i, pos) = re_find!(input, r"^([!-~]+\$?)")?;
     Ok((i, pos.to_string()))
 }
 
 /// function that parses the int tag
 fn parse_int(input: &str) -> IResult<&str, String> {
-    let(i, int) = re_find!(input, r"\-?[0-9]+")?;
+    let(i, int) = re_find!(input, r"^(\-?[0-9]+)")?;
     Ok((i, int.to_string()))
 }
 
 /// function that parses the var tag (similar to the int tag)
 fn parse_var(input: &str) -> IResult<&str, String> {
-    let(i, int) = re_find!(input, r"\*|\-?[0-9]+")?;
+    let(i, int) = re_find!(input, r"^(\*|\-?[0-9]+)")?;
     Ok((i, int.to_string()))
 }
 
 /// function that parses the first (and second) field of the header tag
 fn parse_header_tag(input: &str) -> IResult<&str, String> {
-    let(i, header) = re_find!(input, r"(VN:Z:2.0)?(\tTS:i:(\*|[!-~]+))?")?;
+    let(i, header) = re_find!(input, r"^((VN:Z:2.0)?(\tTS:i:(\*|[!-~]+))?)")?;
     Ok((i, header.to_string()))
 }
 
@@ -342,7 +343,7 @@ fn parse_line(line: &str) -> IResult<&str, Line> {
 ///     }
 /// }
 ///```
-pub fn parse_gfa(path: &PathBuf) -> Option<GFA2> {
+pub fn parse_gfa(path: &PathBuf) -> Result<GFA2, GFAError> {
     let file = File::open(path).expect(&format!("Error opening file {:?}", path));
 
     let reader = BufReader::new(file);
@@ -351,27 +352,29 @@ pub fn parse_gfa(path: &PathBuf) -> Option<GFA2> {
     let mut gfa = GFA2::new();
 
     for line in lines {
-        let l = line.expect("Error parsing file");
-        let p = parse_line(&l);
+        let l = line.expect("Error parsing the file");
+        let p = parse_line(&l)?;
 
-        if let Ok((_, Line::Header(h))) = p {
+        if let (_, Line::Header(h)) = p {
             gfa.headers.push(h);
-        } else if let Ok((_, Line::Segment(s))) = p {
+        } else if let (_, Line::Segment(s)) = p {
             gfa.segments.push(s);
-        } else if let Ok((_, Line::Fragment(f))) = p {
+        } else if let (_, Line::Fragment(f)) = p {
             gfa.fragments.push(f);
-        } else if let Ok((_, Line::Edge(e))) = p {
+        } else if let (_, Line::Edge(e)) = p {
             gfa.edges.push(e);
-        } else if let Ok((_, Line::Gap(g))) = p {
+        } else if let (_, Line::Gap(g)) = p {
             gfa.gaps.push(g);
-        } else if let Ok((_, Line::GroupO(o))) = p {
+        } else if let (_, Line::GroupO(o)) = p {
             gfa.groups_o.push(o)
-        } else if let Ok((_, Line::GroupU(u))) = p {
+        } else if let (_, Line::GroupU(u)) = p {
             gfa.groups_u.push(u)
+        } else {
+            panic!("Error parsing the file");
         }
     }
 
-    Some(gfa)
+    Ok(gfa)
 }
 
 #[cfg(test)]
@@ -387,7 +390,7 @@ mod tests {
         };
 
         match parse_header(hdr) {
-            Err(why) => panic!("{:?}", why),
+            Err(why) => println!("{:?}", why),
             Ok((_res, h)) => assert_eq!(h, hdr_),
         }
     }
@@ -401,7 +404,7 @@ mod tests {
         };
 
         match parse_header(hdr) {
-            Err(why) => panic!("{:?}", why),
+            Err(why) => println!("{:?}", why),
             Ok((_res, h)) => assert_eq!(h, hdr_),
         }
     }
@@ -416,7 +419,7 @@ mod tests {
             tag: vec!["RC:i:4".to_string()],
         };
         match parse_segment(seg) {
-            Err(why) => panic!("{:?}", why),
+            Err(why) => println!("{:?}", why),
             Ok((_res, s)) => assert_eq!(s, seg_),
         }
     }
@@ -431,7 +434,7 @@ mod tests {
             tag: vec!["LN:i:61".to_string(), "KC:i:9455".to_string()],
         };
         match parse_segment(seg) {
-            Err(why) => panic!("{:?}", why),
+            Err(why) => println!("{:?}", why),
             Ok((_res, s)) => assert_eq!(s, seg_),
         }
     }
@@ -450,7 +453,7 @@ mod tests {
             tag: vec![],
         };
         match parse_fragment(fragment) {
-            Err(why) => panic!("{:?}", why),
+            Err(why) => println!("{:?}", why),
             Ok((_res, f)) => assert_eq!(f, fragment_),
         }
     }
@@ -472,7 +475,7 @@ mod tests {
         };
 
         match parse_edge(edge) {
-            Err(why) => panic!("{:?}", why),
+            Err(why) => println!("{:?}", why),
             Ok((_res, e)) => assert_eq!(e, edge_),
         }
     }
@@ -494,7 +497,7 @@ mod tests {
         };
 
         match parse_edge(edge) {
-            Err(why) => panic!("{:?}", why),
+            Err(why) => println!("{:?}", why),
             Ok((_res, e)) => assert_eq!(e, edge_),
         }
     }
@@ -513,7 +516,7 @@ mod tests {
         };
 
         match parse_gap(gap) {
-            Err(why) => panic!("{:?}", why),
+            Err(why) => println!("{:?}", why),
             Ok((_res, g)) => assert_eq!(g, gap_),
         }
     }
@@ -532,7 +535,7 @@ mod tests {
         };
 
         match parse_gap(gap) {
-            Err(why) => panic!("{:?}", why),
+            Err(why) => println!("{:?}", why),
             Ok((_res, g)) => assert_eq!(g, gap_),
         }
     }
@@ -548,7 +551,7 @@ mod tests {
         };
 
         match parse_ogroup(group) {
-            Err(why) => panic!("{:?}", why),
+            Err(why) => println!("{:?}", why),
             Ok((_res, o)) => assert_eq!(o, group_),
         }
     }
@@ -564,7 +567,7 @@ mod tests {
         };
 
         match parse_ugroup(group) {
-            Err(why) => panic!("{:?}", why),
+            Err(why) => println!("{:?}", why),
             Ok((_res, u)) => assert_eq!(u, group_),
         }
     }

@@ -16,16 +16,17 @@ use std::{
 };
 
 use crate::gfa::*;
+use crate::error::GFAError;
 
 /// function that parses the name field 
 fn parse_name(input: &str) -> IResult<&str, String> {
-    let (i, name) = re_find!(input, r"^[!-)+-<>-~][!-~]*")?;
+    let (i, name) = re_find!(input, r"^([!-)+-<>-~][!-~]*)")?;
     Ok((i, name.to_string()))
 }
 
 /// function that parses the first field of the header tag
 fn parse_header_tag(input: &str) -> IResult<&str, String> {
-    let(i, header) = re_find!(input, r"(VN:Z:1.0)?")?;
+    let(i, header) = re_find!(input, r"^(VN:Z:1.0)?")?;
     Ok((i, header.to_string()))
 }
 
@@ -42,7 +43,7 @@ fn parse_header(input: &str) -> IResult<&str, Header> {
 
 /// function that parses the sequence field
 fn parse_sequence(input: &str) -> IResult<&str, String> {
-    let (i, seq) = re_find!(input, r"\*|[A-Za-z=.]+")?;
+    let (i, seq) = re_find!(input, r"^(\*|[A-Za-z=.]+)")?;
     Ok((i, seq.to_string()))
 }
 
@@ -55,25 +56,25 @@ fn parse_orient(input: &str) -> IResult<&str, Orientation> {
 
 /// function that parses the overlap field
 fn parse_overlap(input: &str) -> IResult<&str, String> {
-    let (i, overlap) = re_find!(input, r"\*|([0-9]+[MIDNSHPX=])+")?;
+    let (i, overlap) = re_find!(input, r"^(\*|([0-9]+[MIDNSHPX=])+)")?;
     Ok((i, overlap.to_string()))
 }
 
 /// function that parses the optional fields of the segment tag
 fn parse_optional_fields_segment(input: &str) -> IResult<&str, String> {
-    let (i, opt) = re_find!(input, r"(\t(((LN|RC|FC|KC):i:[-+]?[0-9]+)|(SH:H:[0-9A-F]+)|(UR:Z:[ -~]+)))*")?;
+    let (i, opt) = re_find!(input, r"^(\t(((LN|RC|FC|KC):i:[-+]?[0-9]+)|(SH:H:[0-9A-F]+)|(UR:Z:[ -~]+)))*")?;
     Ok((i, opt.to_string()))
 }
 
 /// function that parses the optional fields of the link tag
 fn parse_optional_fields_link(input: &str) -> IResult<&str, String> {
-    let (i, opt) = re_find!(input, r"(\t(((MQ|NM|RC|FC|KC):i:[-+]?[0-9]+)|(ID:Z:[ -~]+)))*")?;
+    let (i, opt) = re_find!(input, r"^(\t(((MQ|NM|RC|FC|KC):i:[-+]?[0-9]+)|(ID:Z:[ -~]+)))*")?;
     Ok((i, opt.to_string()))
 }
 
 /// function that parses the optional fields of the containment tag
 fn parse_optional_fields_contaiment(input: &str) -> IResult<&str, String> {
-    let (i, opt) = re_find!(input, r"(\t(((NM|RC):i:[-+]?[0-9]+)|(ID:Z:[ -~]+)))*")?;
+    let (i, opt) = re_find!(input, r"^(\t(((NM|RC):i:[-+]?[0-9]+)|(ID:Z:[ -~]+)))*")?;
     Ok((i, opt.to_string()))
 }
 
@@ -201,7 +202,7 @@ fn parse_line(line: &str) -> IResult<&str, Line> {
             Ok((i, Line::Path(p)))
         }
         // found error
-        _ => panic!("Error! the line it's not correct"), 
+        _ => panic!("Error parsing the file"), 
     }
 }
 
@@ -250,7 +251,7 @@ fn parse_line(line: &str) -> IResult<&str, Line> {
 ///             }
 ///         }
 ///```
-pub fn parse_gfa(path: &PathBuf) -> Option<GFA> {
+pub fn parse_gfa(path: &PathBuf) -> Result<GFA, GFAError> {
     let file = File::open(path).expect(&format!("Error opening file {:?}", path));
 
     let reader = BufReader::new(file);
@@ -259,23 +260,25 @@ pub fn parse_gfa(path: &PathBuf) -> Option<GFA> {
     let mut gfa = GFA::new();
 
     for line in lines {
-        let l = line.expect("Error parsing file");
-        let p = parse_line(&l);
+        let l = line.expect("Error parsing the file");
+        let p = parse_line(&l)?;
 
-        if let Ok((_, Line::Header(h))) = p {
+        if let (_, Line::Header(h)) = p {
             gfa.headers.push(h);
-        } else if let Ok((_, Line::Segment(s))) = p {
+        } else if let (_, Line::Segment(s)) = p {
             gfa.segments.push(s);
-        } else if let Ok((_, Line::Link(l))) = p {
+        } else if let (_, Line::Link(l)) = p {
             gfa.links.push(l);
-        } else if let Ok((_, Line::Containment(c))) = p {
+        } else if let (_, Line::Containment(c)) = p {
             gfa.containments.push(c);
-        } else if let Ok((_, Line::Path(pt))) = p {
+        } else if let (_, Line::Path(pt)) = p {
             gfa.paths.push(pt);
+        } else {
+            panic!("Error parsing the file");
         }
     }
 
-    Some(gfa)
+    Ok(gfa)
 }
 
 #[cfg(test)]
@@ -290,7 +293,7 @@ mod tests {
         };
 
         match parse_header(hdr) {
-            Err(err) => panic!("{:?}", err),
+            Err(err) => println!("{:?}", err),
             Ok((_res, h)) => assert_eq!(h, hdr_),
         }
     }
@@ -304,7 +307,7 @@ mod tests {
             optional_fields: vec![],
         };
         match parse_segment(seg) {
-            Err(err) => panic!("{:?}", err),
+            Err(err) => println!("{:?}", err),
             Ok((_res, s)) => assert_eq!(s, seg_),
         }
     }
@@ -318,7 +321,7 @@ mod tests {
             optional_fields: vec!["LN:i:53".to_string(), "KC:i:6".to_string()],
         };
         match parse_segment(seg) {
-            Err(err) => panic!("{:?}", err),
+            Err(err) => println!("{:?}", err),
             Ok((_res, s)) => assert_eq!(s, seg_),
         }
     }
@@ -335,7 +338,7 @@ mod tests {
             optional_fields: vec![],
         };
         match parse_link(link) {
-            Err(err) => panic!("{:?}", err),
+            Err(err) => println!("{:?}", err),
             Ok((_res, l)) => assert_eq!(l, link_),
         }
     }
@@ -352,7 +355,7 @@ mod tests {
             optional_fields: vec!["ID:Z:1_to_2".to_string()],
         };
         match parse_link(link) {
-            Err(err) => panic!("{:?}", err),
+            Err(err) => println!("{:?}", err),
             Ok((_res, l)) => assert_eq!(l, link_),
         }
     }
@@ -372,7 +375,7 @@ mod tests {
         };
 
         match parse_containment(cont) {
-            Err(err) => panic!("{:?}", err),
+            Err(err) => println!("{:?}", err),
             Ok((_res, c)) => assert_eq!(c, cont_),
         }
     }
@@ -392,7 +395,7 @@ mod tests {
         };
 
         match parse_containment(cont) {
-            Err(err) => panic!("{:?}", err),
+            Err(err) => println!("{:?}", err),
             Ok((_res, c)) => assert_eq!(c, cont_),
         }
     }
@@ -408,7 +411,7 @@ mod tests {
         };
 
         match parse_path(path) {
-            Err(err) => panic!("{:?}", err),
+            Err(err) => println!("{:?}", err),
             Ok((_res, p)) => assert_eq!(p, path_),
         }
     }

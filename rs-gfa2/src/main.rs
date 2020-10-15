@@ -1,22 +1,22 @@
-extern crate regex;
-
 #[macro_use]
 extern crate clap;
+extern crate regex;
 
-#[path = "gfa/gfa.rs"]
-mod gfa; 
-#[path = "gfa2/gfa2.rs"]
+#[path = "format/gfa.rs"]
+mod gfa;
+#[path = "format/gfa2.rs"]
 mod gfa2;
 
-#[path = "gfa/parser.rs"]
-mod parser_gfa; 
-#[path = "gfa2/parser.rs"]
+#[path = "format/parser_gfa.rs"]
+mod parser_gfa;
+#[path = "format/parser_gfa2.rs"]
 mod parser_gfa2;
 
-#[path = "gfa/test.rs"]
-mod test_gfa; 
-#[path = "gfa2/test.rs"]
-mod test_gfa2; 
+#[path = "error/error.rs"]
+mod error;
+#[path = "test/test.rs"]
+mod test;  
+
 
 fn main() {
 
@@ -49,19 +49,17 @@ fn main() {
             
             let gfa = parser_gfa::parse_gfa(&std::path::PathBuf::from(file));
             match gfa {
-                // TODO: FIX ME SENPAI! I AM NEVER USED :( 
-                None => println!("Error parsing the file {:?} as a GFA1 file", filename),
-                Some(_g) => println!("Success! the file {:?} is accordant to the GFA1 format", filename),
+                Err(why) => println!("{}", why),
+                Ok(_) => println!("Success! the file {:?} is accordant to the GFA1 format", filename),
             }
         },
         "gfa2" => {
             println!("Checking the file: {:?}", filename);
             
-            let gfa = parser_gfa2::parse_gfa(&std::path::PathBuf::from(file));
+            let gfa = parser_gfa::parse_gfa(&std::path::PathBuf::from(file));
             match gfa {
-                // TODO: FIX ME SENPAI! I AM NEVER USED :(
-                None => println!("Error parsing the file {:?} as a GFA2 file", filename),
-                Some(_g) => println!("Success! the file {:?} is accordant to the GFA2 format", filename),
+                Err(why) => println!("{}", why),
+                Ok(_) => println!("Success! the file {:?} is accordant to the GFA2 format", filename),
             }
         },
         _ => eprintln!("Error! the argument passed as FORMAT is not valid\n\

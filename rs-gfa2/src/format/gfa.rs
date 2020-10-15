@@ -313,6 +313,28 @@ pub struct Containment {
     pub optional_fields: Vec<String>,
 }
 
+impl Containment {
+    fn new(
+        container_name: &str,
+        container_orient: Orientation,
+        contained_name: &str,
+        contained_orient: Orientation,
+        pos: usize,
+        overlap: &str,
+        optional_fields: Vec<&str>,
+    ) -> Containment {
+        Containment {
+            container_name: container_name.to_string(),
+            container_orient: container_orient,
+            contained_name: contained_name.to_string(),
+            contained_orient: contained_orient,
+            pos: pos,
+            overlap: overlap.to_string(),
+            optional_fields: optional_fields.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
+        }
+    }
+}
+
 impl fmt::Display for Containment {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
