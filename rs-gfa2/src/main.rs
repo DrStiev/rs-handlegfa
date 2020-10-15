@@ -1,22 +1,15 @@
 #[macro_use]
 extern crate clap;
-extern crate regex;
 
-#[path = "format/gfa.rs"]
-mod gfa;
-#[path = "format/gfa2.rs"]
-mod gfa2;
-
-#[path = "format/parser_gfa.rs"]
-mod parser_gfa;
-#[path = "format/parser_gfa2.rs"]
-mod parser_gfa2;
+pub mod gfa;
+pub mod gfa2;
+pub mod parser_gfa;
+pub mod parser_gfa2;
 
 #[path = "error/error.rs"]
-mod error;
+pub mod error;
 #[path = "test/test.rs"]
-mod test;  
-
+pub mod test; 
 
 fn main() {
 
@@ -40,26 +33,23 @@ fn main() {
     // Calling .unwrap() is safe here because "INPUT" is required (if "INPUT" wasn't
     // required we could have used an 'if let' to conditionally get the value)
     let file = matches.value_of("INPUT").unwrap();
-
     let filename = std::path::Path::new(file.clone()).file_name().unwrap();
 
     match matches.value_of("FORMAT").unwrap() {
         "gfa" => {
-            println!("Checking the file: {:?}", filename);
-            
+            println!("Checking the file...");
             let gfa = parser_gfa::parse_gfa(&std::path::PathBuf::from(file));
             match gfa {
                 Err(why) => println!("{}", why),
-                Ok(_) => println!("Success! the file {:?} is accordant to the GFA1 format", filename),
+                Ok(_) => println!("Success! the file {:?} is accordant to the GFA1 format.", filename),
             }
         },
         "gfa2" => {
-            println!("Checking the file: {:?}", filename);
-            
+            println!("Checking the file...");
             let gfa = parser_gfa::parse_gfa(&std::path::PathBuf::from(file));
             match gfa {
                 Err(why) => println!("{}", why),
-                Ok(_) => println!("Success! the file {:?} is accordant to the GFA2 format", filename),
+                Ok(_) => println!("Success! the file {:?} is accordant to the GFA2 format.", filename),
             }
         },
         _ => eprintln!("Error! the argument passed as FORMAT is not valid\n\

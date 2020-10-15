@@ -161,6 +161,8 @@ fn parse_containment(input: &str) -> IResult<&str, Containment> {
 
 /// function that parses the path tag
 fn parse_path(input: &str) -> IResult<&str, Path> {
+    let tab = tag("\t");
+
     let (i, path_name) = terminated(parse_name, &tab)(input)?;
     let (i, segs) = terminated(parse_name, &tab)(i)?;
     let segment_names = segs.split_terminator(",").map(String::from).collect();
@@ -177,6 +179,7 @@ fn parse_path(input: &str) -> IResult<&str, Path> {
 
 /// function that parses the line of a GFA file
 fn parse_line(line: &str) -> IResult<&str, Line> {
+    let tab = tag("\t");
     let (i, line_type) = terminated(one_of("HSLCP#"), tab)(line)?;
 
     match line_type {

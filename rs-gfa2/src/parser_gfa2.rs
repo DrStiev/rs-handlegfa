@@ -258,6 +258,7 @@ fn parse_ugroup(input: &str) -> IResult<&str, GroupU> {
 
 /// function that parses all the lines based on their prefix 
 fn parse_line(line: &str) -> IResult<&str, Line> {
+    let tab = tag("\t");
     let (i, line_type) = terminated(one_of("HSFEGOU#"), tab)(line)?;
 
     match line_type {
