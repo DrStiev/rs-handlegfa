@@ -76,15 +76,6 @@ impl fmt::Display for Header {
 ///     sequence: "TGCAACGTATAGACTTGTCAC".to_string(),
 ///     optional_fields: vec![],
 /// };
-/// 
-/// // inizialize an empty segment
-/// // this is allowed but the segment line will be  
-/// // considered not part of the GFA format
-/// let empty_segment = Segment {
-///     name: "".to_string(),
-///     sequence: "".to_string(),
-///     optional_fields: vec![],
-/// };
 /// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Segment {
@@ -177,23 +168,11 @@ impl fmt::Display for Orientation {
 /// // inizialize a simple link 
 /// let simple_link = Link {
 ///     from_segment: "1".to_string(),
-///     from_orient: "+".to_string(),
+///     from_orient: Orientation::Forward, // "+"
 ///     to_segment: "2".to_string(),
-///     to_orient: "+".to_orient(),
+///     to_orient: Orientation::Forward, // "+"
 ///     overlap: "5M".to_string(),
 ///     optional_fields: vec![], 
-/// };
-/// 
-/// // inizialize an empty link
-/// // this is allowed but the link line will be  
-/// // considered not part of the GFA format
-/// let empty_link = Link {
-///     from_segment: "".to_string(),
-///     from_orient: "".to_string(),
-///     to_segment: "".to_string(),
-///     to_orient: "".to_orient(),
-///     overlap: "".to_string(),
-///     optional_fields: vec![],
 /// };
 /// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
@@ -280,25 +259,12 @@ impl fmt::Display for Link {
 /// // inizialize a simple Containment 
 /// let simple_containment = Containment {
 ///     container_name: "1".to_string(),
-///     container_orientation: "+".to_string(),
+///     container_orient: Orientation::Forward, // "+"
 ///     contained_name: "5".to_string(),
-///     contained_orientation: "+".to_orient(),
-///     pos: "12". to_string(),
+///     contained_orient: Orientation::Forward, // "+"
+///     pos: 12,
 ///     overlap: "120M".to_string(),
-///     optional_fields> vec![],
-/// };
-/// 
-/// // inizialize an empty containment
-/// // this is allowed but the containment line will be  
-/// // considered not part of the GFA format
-/// let empty_containment = Containment {
-///     container_name: "".to_string(),
-///     container_orientation: "".to_string(),
-///     contained_name: "".to_string(),
-///     contained_orientation: "".to_orient(),
-///     pos: "". to_string(),
-///     overlap: "".to_string()
-///     optional_fields> vec![],
+///     optional_fields: vec![],
 /// };
 /// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
@@ -383,15 +349,6 @@ impl fmt::Display for Containment {
 ///     segment_names: vec!["11+".to_string(), "12+".to_string()],
 ///     overlaps: vec!["122M".to_string()],
 /// };
-/// 
-/// // inizialize an empty path
-/// // this is allowed but the path line will be  
-/// // considered not part of the GFA format
-/// let empty_path = Path {
-///     path_name: "".to_string(),
-///     segment_names: vec![],
-///     overlaps: vec![],
-/// };
 /// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Path {
@@ -432,7 +389,7 @@ pub enum Line {
     Link(Link),
     Containment(Containment),
     Path(Path),
-    Comment,
+    Comment(String),
 }
 
 /// Returns a GFA object which is composed of:\
@@ -465,15 +422,15 @@ pub enum Line {
 ///         Header::new("VN:Z:1.0"),
 ///     ],
 ///     segments: vec![
-///         Segment::new("1", "CAAATAAG"),
-///         Segment::new("2", "A"),
-///         Segment::new("3", "G"),
-///         Segment::new("4", "T"),
-///         Segment::new("5", "C"),
+///         Segment::new("1", "CAAATAAG", vec![]),
+///         Segment::new("2", "A", vec![]),
+///         Segment::new("3", "G", vec![]),
+///         Segment::new("4", "T", vec![]),
+///         Segment::new("5", "C", vec![]),
 ///     ],
 ///     links: vec![
-///         Link::new("1", Orientation::Forward, "2", Orientation::Forward, "0M"),
-///         Link::new("1", Orientation::Forward, "3", Orientation::Forward, "0M"),
+///         Link::new("1", Orientation::Forward, "2", Orientation::Forward, "0M", vec![]),
+///         Link::new("1", Orientation::Forward, "3", Orientation::Forward, "0M", vec![]),
 ///     ],
 ///     paths: vec![Path::new(
 ///         "x",
@@ -495,6 +452,7 @@ pub struct GFA {
     pub links: Vec<Link>,
     pub containments: Vec<Containment>,
     pub paths: Vec<Path>,
+    pub comments: Vec<String>,
 }
 
 impl GFA {
@@ -505,6 +463,7 @@ impl GFA {
             links: vec![],
             containments: vec![],
             paths: vec![],
+            comments: vec![],
         }
     }
 }
@@ -556,6 +515,7 @@ mod tests {
                 vec!["8M", "1M", "1M", "3M", "1M", "19M", "1M", "4M", "1M", "11M"],
             )],
             containments: vec![],
+            comments: vec![],
         };
 
         println!("{}", gfa_correct);

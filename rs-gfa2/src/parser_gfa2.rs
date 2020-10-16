@@ -15,6 +15,12 @@ use std::{
 use crate::gfa2::*;
 use crate::error::GFAError;
 
+/// function that parses a comment line
+fn parse_comment(input: &str) -> IResult<&str, String> {
+    let(i, comment) = re_find!(input, r"^([ -~]*)")?;
+    Ok((i, comment.to_string()))
+}
+
 /// function that parses the id tag (added the optional vector part)
 fn parse_id(input: &str) -> IResult<&str, String> {
     let (i, id) = re_find!(input, r"^([!-~]+([ ][!-~]+)*)")?;
@@ -259,14 +265,13 @@ fn parse_ugroup(input: &str) -> IResult<&str, GroupU> {
 /// function that parses all the lines based on their prefix 
 fn parse_line(line: &str) -> IResult<&str, Line> {
     let tab = tag("\t");
-    let (i, line_type) = terminated(one_of("HSFEGOU#"), tab)(line)?;
+    let (i, line_type) = terminated(one_of("HSFEGOU#"), &tab)(line)?;
 
     match line_type {
         'H' => {
             let (i, h) = parse_header(i)?;
             Ok((i, Line::Header(h)))
         }
-        '#' => Ok((i, Line::Comment)),
         'S' => {
             let (i, s) = parse_segment(i)?;
             Ok((i, Line::Segment(s)))
@@ -291,7 +296,13 @@ fn parse_line(line: &str) -> IResult<&str, Line> {
             let (i, u) = parse_ugroup(i)?;
             Ok((i, Line::GroupU(u)))
         }
-        _ => Ok((i, Line::CustomRecord)), // ignore unrecognized prefix to allow custom record
+        // TODO: the comment line it's not recognize due to a parse error from the tag element (terminated)
+        '#' => {
+            let(i, com) = parse_comment(i)?;
+            Ok((i, Line::Comment(com)))
+        }
+        // ignore unrecognized prefix to allow custom record
+        _ => Ok((i, Line::CustomRecord(i.to_string()))), 
     }
 }
 
@@ -316,15 +327,15 @@ fn parse_line(line: &str) -> IResult<&str, Line> {
 /// # Examples
 /// 
 /// ```
-/// use rs_gfa2::parser::*;
+/// use rs_gfa2::parser_gfa2::*;
 /// use std::path::PathBuf;
 /// 
 /// // initialize the parser object
-/// let gfa = parse_gfa(&PathBuf::from("test\\gfas\\big_file\\graph_nicernames.gfa"));
+/// let gfa = parse_gfa(&PathBuf::from("test\\gfas\\gfa2_files\\graph_nicernames.gfa"));
 ///     match gfa {
 ///     // check the results of the parsing function
-///         None => panic!("Error parsing GFA file"),
-///         Some(g) => {
+///         Err(why) => println!("{}", why),
+///         Ok(g) => {
 ///         // use the result as you want
 ///             let num_head = g.headers.len();
 ///             let num_segs = g.segments.len();
@@ -343,7 +354,7 @@ fn parse_line(line: &str) -> IResult<&str, Line> {
 ///             assert_eq!(num_group_u, 2);
 ///     }
 /// }
-///```
+/// ```
 pub fn parse_gfa(path: &PathBuf) -> Result<GFA2, GFAError> {
     let file = File::open(path).expect(&format!("Error opening file {:?}", path));
 
@@ -370,8 +381,10 @@ pub fn parse_gfa(path: &PathBuf) -> Result<GFA2, GFAError> {
             gfa.groups_o.push(o)
         } else if let (_, Line::GroupU(u)) = p {
             gfa.groups_u.push(u)
-        } else {
-            panic!("Error parsing the file");
+        } else if let (_, Line::Comment(comment)) = p {
+            gfa.comments.push(comment)
+        } else if let (_, Line::CustomRecord(custom)) = p {
+            gfa.custom_record.push(custom)
         }
     }
 

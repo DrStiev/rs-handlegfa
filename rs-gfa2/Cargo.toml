@@ -10,6 +10,7 @@ edition = "2018"
 lazy_static = "1.4.0"
 regex = "1"
 clap = "3.0.0-beta.2"
+glob = "0.3.0"
 
 [dependencies.nom]
 version = "^5"
@@ -19,5 +20,5 @@ features = ["regexp"]
 criterion = "0.3"
 
 [[bench]]
-name = "parse_benchmark"
+name = "benchmark"
 harness = false

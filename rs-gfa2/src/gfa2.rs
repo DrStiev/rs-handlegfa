@@ -102,24 +102,6 @@ impl fmt::Display for Header {
 ///     sequence: "TGCAACGTATAGACTTGTCAC".to_string(),
 ///     tag: vec![],
 /// };
-/// 
-/// // inizialize a richer segment
-/// let richer_segment = Segment {
-///     id: "61".to_string(),
-///     len: "61".to_string(),
-///     sequence: "GACAAAGTCATCGGGCATTATCTGAACATAAAACACTATCAATAAGTTGGAGTCATTACCT".to_string(),
-///     tag: vec!["LN:i:61".to_string(), "KC:i:9455".to_string()],
-/// };
-/// 
-/// // inizialize an empty segment
-/// // this is allowed but the segment line will be  
-/// // considered not part of the GFA2 format
-/// let empty_segment = Segment {
-///     id: "".to_string(),
-///     len: "".to_string(),
-///     sequence: "".to_string(),
-///     tag: vec![],
-/// };
 /// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Segment {
@@ -203,32 +185,6 @@ impl fmt::Display for Segment {
 ///     fbeg: "0".to_string(),
 ///     fend: "140".to_string(),
 ///     alignment: "11M".to_string(),
-///     tag: vec![],
-/// };
-/// 
-/// // inizialize a different fragment
-/// let different_fragment = Fragment {
-///     id: "2".to_string(),
-///     ext_ref: "read2+".to_string(),
-///     sbeg: "45".to_string(),
-///     send: "62".to_string(),
-///     fbeg: "0".to_string(),
-///     fend: "18".to_string(),
-///     alignment: "*".to_string(),
-///     tag: vec!["id:Z:read2_in_2".to_string()],
-/// };
-/// 
-/// // inizialize an empty fragment
-/// // this is allowed but the fragment line will be  
-/// // considered not part of the GFA2 format
-/// let empty_fragment = Fragment {
-///     id: "".to_string(),
-///     ext_ref: "".to_string(),
-///     sbeg: "".to_string(),
-///     send: "".to_string(),
-///     fbeg: "".to_string(),
-///     fend: "".to_string(),
-///     alignment: "".to_string(),
 ///     tag: vec![],
 /// };
 /// ```
@@ -354,34 +310,6 @@ impl fmt::Display for Fragment {
 ///     alignment: "47M".to_string(),
 ///     tag: vec![],
 /// };
-/// 
-/// // inizialize a different edge
-/// let different_edge = Edge {
-///     id: "1_to_5".to_string(),
-///     sid1: "1+".to_string(),
-///     sid2: "5+".to_string(),
-///     beg1: "0".to_string(),
-///     end1: "122$".to_string(),
-///     beg2: "2".to_string(),
-///     end2: "124".to_string(),
-///     alignment: "*".to_string(),
-///     tag: vec!["zz:Z:tag".to_string()],
-/// };
-/// 
-/// // inizialize an empty edge
-/// // this is allowed but the edge line will be  
-/// // considered not part of the GFA2 format
-/// let empty_edge = Edge {
-///     id: "".to_string(),
-///     sid1: "".to_string(),
-///     sid2: "".to_string(),
-///     beg1: "".to_string(),
-///     end1: "".to_string(),
-///     beg2: "".to_string(),
-///     end2: "".to_string(),
-///     alignment: "".to_string(),
-///     tag: vec![],
-/// };
 /// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Edge {
@@ -481,28 +409,6 @@ impl fmt::Display for Edge {
 ///     var: "50".to_string(),
 ///     tag: vec![],
 /// };
-/// 
-/// // inizialize a different gap
-/// let different_gap = Gap {
-///     id: "1_to_11".to_string(),
-///     sid1: "1+".to_string(),
-///     sid2: "11-".to_string(),
-///     dist: "120".to_string(),
-///     var: "*".to_string(),
-///     tag: vec![],
-/// };
-/// 
-/// // inizialize an empty gap
-/// // this is allowed but the gap line will be  
-/// // considered not part of the GFA2 format
-/// let empty_gap = Gap {
-///     id: "".to_string(),
-///     sid1: "".to_string(),
-///     sid2: "".to_string(),
-///     dist: "".to_string(),
-///     var: "".to_string(),
-///     tag: vec![],
-/// };
 /// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Gap {
@@ -585,15 +491,6 @@ impl fmt::Display for Gap {
 ///     var_field: vec!["11+".to_string(), "11_to_13+".to_string(), "13+".to_string()],
 ///     tag: vec!["xx:i:-1".to_string()],
 /// };
-/// 
-/// // inizialize an empty o-group 
-/// // this is allowed but the o-group line will be  
-/// // considered not part of the GFA2 format
-/// let empty_o_group = GroupO {
-///     id: "".to_string(),
-///     var_field: vec![],
-///     tag: vec![],
-/// };
 /// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct GroupO {
@@ -667,15 +564,6 @@ impl fmt::Display for GroupO {
 ///     var_field: vec!["2".to_string(), "3".to_string()],
 ///     tag: vec![],
 /// };
-/// 
-/// // inizialize an empty u-group 
-/// // this is allowed but the u-group line will be  
-/// // considered not part of the GFA2 format
-/// let empty_u_group = GroupU {
-///     id: "".to_string(),
-///     var_field: vec![],
-///     tag: vec![],
-/// };
 /// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct GroupU {
@@ -724,8 +612,8 @@ pub enum Line {
     Gap(Gap),
     GroupO(GroupO),
     GroupU(GroupU),
-    Comment,
-    CustomRecord,
+    Comment(String),
+    CustomRecord(String),
 }
 
 /// Returns a GFA2 object which is composed of:\
@@ -789,6 +677,8 @@ pub enum Line {
 /// gfa2.gaps = vec![];
 /// gfa2.groups_o = vec![];
 /// gfa2.groups_u = vec![];
+/// gfa2.comments = vec![];
+/// gfa2.custom_record = vec![];
 /// 
 /// // inizialize an empty GFA2 object 
 /// let empty_gfa2 = GFA2::new();
@@ -804,6 +694,8 @@ pub struct GFA2 {
     pub gaps: Vec<Gap>,
     pub groups_o: Vec<GroupO>,
     pub groups_u: Vec<GroupU>,
+    pub comments: Vec<String>,
+    pub custom_record: Vec<String>,
 }
 
 impl GFA2 {
@@ -816,6 +708,8 @@ impl GFA2 {
             gaps: vec![],
             groups_o: vec![],
             groups_u: vec![],
+            comments: vec![],
+            custom_record: vec![],
         }
     }
 }
@@ -824,7 +718,7 @@ impl fmt::Display for GFA2 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f, 
-            "{}{}{}{}{}{}{}",
+            "{}{}{}{}{}{}{}{}",
             self.headers.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
             self.segments.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
             self.fragments.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
@@ -832,6 +726,7 @@ impl fmt::Display for GFA2 {
             self.gaps.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
             self.groups_o.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
             self.groups_u.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
+            self.custom_record.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
         )
     }
 }
@@ -944,6 +839,10 @@ mod tests {
         gfa2.gaps = vec![];
         gfa2.groups_o = vec![];
         gfa2.groups_u = vec![];
+
+        // comments will not be printed 
+        gfa2.comments = vec![];
+        gfa2.custom_record = vec![];
 
         println!("{}", gfa2);
     }

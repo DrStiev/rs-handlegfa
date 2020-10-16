@@ -177,17 +177,21 @@ fn parse_path(input: &str) -> IResult<&str, Path> {
     Ok((i, result))
 }
 
+/// function that parses a comment line
+fn parse_comment(input: &str) -> IResult<&str, String> {
+    let(i, comment) = re_find!(input, r"^([ -~]*)")?;
+    Ok((i, comment.to_string()))
+}
 /// function that parses the line of a GFA file
 fn parse_line(line: &str) -> IResult<&str, Line> {
     let tab = tag("\t");
-    let (i, line_type) = terminated(one_of("HSLCP#"), tab)(line)?;
+    let (i, line_type) = terminated(one_of("HSLCP#"), &tab)(line)?;
 
     match line_type {
         'H' => {
             let (i, h) = parse_header(i)?;
             Ok((i, Line::Header(h)))
         }
-        '#' => Ok((i, Line::Comment)),
         'S' => {
             let (i, s) = parse_segment(i)?;
             Ok((i, Line::Segment(s)))
@@ -203,6 +207,11 @@ fn parse_line(line: &str) -> IResult<&str, Line> {
         'P' => {
             let (i, p) = parse_path(i)?;
             Ok((i, Line::Path(p)))
+        }
+        // TODO: the comment line it's not recognize due to a parse error from the tag element (terminated)
+        '#' => {
+            let(i, com) = parse_comment(i)?;
+            Ok((i, Line::Comment(com)))
         }
         // found error
         _ => panic!("Error parsing the file"), 
@@ -230,14 +239,14 @@ fn parse_line(line: &str) -> IResult<&str, Line> {
 /// # Examples
 /// 
 /// ```
-/// use rs_gfa2::parser::*;
+/// use rs_gfa2::parser_gfa::*;
 /// use std::path::PathBuf;
 /// 
 /// // initialize the parser object
 /// let gfa = parse_gfa(&PathBuf::from("test\\gfas\\gfa1_files\\lil.gfa"));
 ///         match gfa {
-///             None => panic!("Error parsing GFA file"),
-///             Some(g) => {
+///             Err(why) => println!("{}", why),
+///             Ok(g) => {
 ///                 let num_head = g.headers.len();
 ///                 let num_segs = g.segments.len();
 ///                 let num_links = g.links.len();
@@ -253,7 +262,7 @@ fn parse_line(line: &str) -> IResult<&str, Line> {
 ///                 println!("{}", g);
 ///             }
 ///         }
-///```
+/// ```
 pub fn parse_gfa(path: &PathBuf) -> Result<GFA, GFAError> {
     let file = File::open(path).expect(&format!("Error opening file {:?}", path));
 
@@ -276,8 +285,8 @@ pub fn parse_gfa(path: &PathBuf) -> Result<GFA, GFAError> {
             gfa.containments.push(c);
         } else if let (_, Line::Path(pt)) = p {
             gfa.paths.push(pt);
-        } else {
-            panic!("Error parsing the file");
+        } else if let (_, Line::Comment(comment)) = p {
+            gfa.comments.push(comment)
         }
     }
 
