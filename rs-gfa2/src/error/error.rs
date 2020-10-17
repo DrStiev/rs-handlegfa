@@ -21,6 +21,14 @@ impl From<nom::Err<(&str, nom::error::ErrorKind)>> for GFAError {
     }
 }
 
+/// implement the trait From<std::io::Error> for GFAError
+/// to use the GFAError struct properly
+impl From<std::io::Error> for GFAError {
+    fn from(error: std::io::Error) -> Self {
+        GFAError::new(&error.to_string())
+    }
+}
+
 /// implement the display trait for
 impl std::fmt::Display for GFAError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

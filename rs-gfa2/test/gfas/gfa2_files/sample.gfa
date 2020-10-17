@@ -9,3 +9,4 @@ E	*	1+	2+	3	8$	0	5	0,2,4	TS:i:2
 E	*	3+	2+	21$	21$	0	0	0M
 E	*	3+	4-	16	21$	3	7$	1M1D3M
 E	*	4-	5+	0	0	0	0	0M
+X	custom_record	xx:Z:testtag

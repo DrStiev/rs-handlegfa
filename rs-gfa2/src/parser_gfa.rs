@@ -178,38 +178,50 @@ fn parse_path(input: &str) -> IResult<&str, Path> {
 }
 
 /// function that parses a comment line
-fn parse_comment(input: &str) -> IResult<&str, String> {
+fn parse_comment(input: &str) -> IResult<&str, Comment> {
     let(i, comment) = re_find!(input, r"^([ -~]*)")?;
-    Ok((i, comment.to_string()))
+
+    let result = Comment {
+        comment: comment.to_string(),
+    };
+
+    Ok((i, result))
 }
+
 /// function that parses the line of a GFA file
 fn parse_line(line: &str) -> IResult<&str, Line> {
     let tab = tag("\t");
-    let (i, line_type) = terminated(one_of("HSLCP#"), &tab)(line)?;
+    let line_type = line.chars().nth(0).unwrap(); //&line[0..1];
+    // let (i, line_type) = terminated(one_of("HSLCP#"), &tab)(line)?;
 
     match line_type {
         'H' => {
-            let (i, h) = parse_header(i)?;
+            let (i, _h) = terminated(one_of("H"), &tab)(line)?;
+            let(i, h) = parse_header(i)?;
             Ok((i, Line::Header(h)))
         }
         'S' => {
-            let (i, s) = parse_segment(i)?;
+            let (i, _s) = terminated(one_of("S"), &tab)(line)?;
+            let(i, s) = parse_segment(i)?;
             Ok((i, Line::Segment(s)))
         }
         'L' => {
-            let (i, l) = parse_link(i)?;
+            let (i, _l) = terminated(one_of("L"), &tab)(line)?;
+            let(i, l) = parse_link(i)?;
             Ok((i, Line::Link(l)))
         }
         'C' => {
-            let (i, c) = parse_containment(i)?;
+            let (i, _c) = terminated(one_of("C"), &tab)(line)?;
+            let(i, c) = parse_containment(i)?;
             Ok((i, Line::Containment(c)))
         }
         'P' => {
-            let (i, p) = parse_path(i)?;
+            let (i, _p) = terminated(one_of("P"), &tab)(line)?;
+            let(i, p) = parse_path(i)?;
             Ok((i, Line::Path(p)))
         }
-        // TODO: the comment line it's not recognize due to a parse error from the tag element (terminated)
         '#' => {
+            let (i, _com) = terminated(one_of("#"), tag(" "))(line)?;
             let(i, com) = parse_comment(i)?;
             Ok((i, Line::Comment(com)))
         }

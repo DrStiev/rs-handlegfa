@@ -15,12 +15,6 @@ use std::{
 use crate::gfa2::*;
 use crate::error::GFAError;
 
-/// function that parses a comment line
-fn parse_comment(input: &str) -> IResult<&str, String> {
-    let(i, comment) = re_find!(input, r"^([ -~]*)")?;
-    Ok((i, comment.to_string()))
-}
-
 /// function that parses the id tag (added the optional vector part)
 fn parse_id(input: &str) -> IResult<&str, String> {
     let (i, id) = re_find!(input, r"^([!-~]+([ ][!-~]+)*)")?;
@@ -262,47 +256,77 @@ fn parse_ugroup(input: &str) -> IResult<&str, GroupU> {
     Ok((i, result))
 }
 
+/// function that parses a comment line
+fn parse_comment(input: &str) -> IResult<&str, Comment> {
+    let(i, comment) = re_find!(input, r"^([ -~]*)")?;
+
+    let result = Comment {
+        comment: comment.to_string(),
+    };
+
+    Ok((i, result))
+}
+
+fn insert_custom_record(input: &str) -> IResult<&str, CustomRecord> {
+    let result = CustomRecord {
+        record: input.to_string(),
+    };
+
+    Ok(("", result))
+}
+
 /// function that parses all the lines based on their prefix 
 fn parse_line(line: &str) -> IResult<&str, Line> {
     let tab = tag("\t");
-    let (i, line_type) = terminated(one_of("HSFEGOU#"), &tab)(line)?;
+    let line_type = line.chars().nth(0).unwrap(); //&line[0..1];
+    // let (i, line_type) = terminated(one_of("HSFEGOU#"), &tab)(line)?;
 
     match line_type {
         'H' => {
-            let (i, h) = parse_header(i)?;
+            let (i, _h) = terminated(one_of("H"), &tab)(line)?;
+            let(i, h) = parse_header(i)?;
             Ok((i, Line::Header(h)))
         }
         'S' => {
-            let (i, s) = parse_segment(i)?;
+            let (i, _s) = terminated(one_of("S"), &tab)(line)?;
+            let(i, s) = parse_segment(i)?;
             Ok((i, Line::Segment(s)))
         }
         'F' => {
-            let (i, f) = parse_fragment(i)?;
+            let (i, _f) = terminated(one_of("F"), &tab)(line)?;
+            let(i, f) = parse_fragment(i)?;
             Ok((i, Line::Fragment(f)))
         }
         'E' => {
-            let (i, e) = parse_edge(i)?;
+            let (i, _e) = terminated(one_of("E"), &tab)(line)?;
+            let(i, e) = parse_edge(i)?;
             Ok((i, Line::Edge(e)))
         }
         'G' => {
-            let (i, g) = parse_gap(i)?;
+            let (i, _g) = terminated(one_of("G"), &tab)(line)?;
+            let(i, g) = parse_gap(i)?;
             Ok((i, Line::Gap(g)))
         }
         'O' => {
-            let (i, o) = parse_ogroup(i)?;
+            let (i, _o) = terminated(one_of("O"), &tab)(line)?;
+            let(i, o) = parse_ogroup(i)?;
             Ok((i, Line::GroupO(o)))
         }
         'U' => {
-            let (i, u) = parse_ugroup(i)?;
+            let (i, _u) = terminated(one_of("U"), &tab)(line)?;
+            let(i, u) = parse_ugroup(i)?;
             Ok((i, Line::GroupU(u)))
         }
-        // TODO: the comment line it's not recognize due to a parse error from the tag element (terminated)
         '#' => {
+            let (i, _com) = terminated(one_of("#"), tag(" "))(line)?;
             let(i, com) = parse_comment(i)?;
             Ok((i, Line::Comment(com)))
         }
         // ignore unrecognized prefix to allow custom record
-        _ => Ok((i, Line::CustomRecord(i.to_string()))), 
+        _ => {
+            let(i, rec) = insert_custom_record(line)?;
+            Ok((i, Line::CustomRecord(rec)))
+        }
     }
 }
 
@@ -356,7 +380,7 @@ fn parse_line(line: &str) -> IResult<&str, Line> {
 /// }
 /// ```
 pub fn parse_gfa(path: &PathBuf) -> Result<GFA2, GFAError> {
-    let file = File::open(path).expect(&format!("Error opening file {:?}", path));
+    let file = File::open(path)?;
 
     let reader = BufReader::new(file);
     let lines = reader.lines();
@@ -439,7 +463,7 @@ mod tests {
     }
 
     #[test]
-    fn can_parse_double_tag_segment() {
+    fn can_parse_segment_double_tag() {
         let seg = "61\t61\tGACAAAGTCATCGGGCATTATCTGAACATAAAACACTATCAATAAGTTGGAGTCATTACCT\tLN:i:61\tKC:i:9455";
         let seg_ = Segment {
             id: "61".to_string(),
@@ -584,5 +608,77 @@ mod tests {
             Err(why) => println!("{:?}", why),
             Ok((_res, u)) => assert_eq!(u, group_),
         }
+    }
+
+    #[test]
+    fn can_parse_line() {
+        let file = "H	VN:Z:2.0
+# File used for the collections test
+S	A	10	AAAAAAACGT
+F	2	read1+	0	42	12	55	*	id:Z:read1_in_2
+E	1	A+	X+	6	10$	0	4	4M
+G	1_to_11	1+	11-	120	*
+O	P1S	A+ X+ B+
+U	16	1 3 15 2_to_6 16sub
+X	custom_record	xx:Z:testtag";
+
+        let mut gfa = GFA2::new();
+        let lines = file.lines();
+
+        for line in lines {
+            let p = parse_line(&line);
+    
+            if let Ok((_, Line::Header(h))) = p {
+                gfa.headers.push(h);
+            } else if let Ok((_, Line::Segment(s))) = p {
+                gfa.segments.push(s);
+            } else if let Ok((_, Line::Fragment(f))) = p {
+                gfa.fragments.push(f);
+            } else if let Ok((_, Line::Edge(e))) = p {
+                gfa.edges.push(e);
+            } else if let Ok((_, Line::Gap(g))) = p {
+                gfa.gaps.push(g);
+            } else if let Ok((_, Line::GroupO(o))) = p {
+                gfa.groups_o.push(o)
+            } else if let Ok((_, Line::GroupU(u))) = p {
+                gfa.groups_u.push(u)
+            } else if let Ok((_, Line::Comment(comment))) = p {
+                gfa.comments.push(comment)
+            } else if let Ok((_, Line::CustomRecord(custom))) = p {
+                gfa.custom_record.push(custom)
+            }
+        }
+
+        let gfa_correct = GFA2 {
+            headers: vec![
+                Header::new("VN:Z:2.0", vec![]),
+            ],
+            segments: vec![
+                Segment::new("A", "10", "AAAAAAACGT", vec![]),
+            ],
+            fragments: vec![
+                Fragment::new("2", "read1+", "0", "42", "12", "55", "*", vec!["id:Z:read1_in_2"]),
+            ],
+            edges: vec![
+                Edge::new("1", "A+", "X+", "6", "10$", "0", "4", "4M", vec![]),
+            ],
+            gaps: vec![
+                Gap::new("1_to_11", "1+", "11-", "120", "*", vec![]),
+            ],
+            groups_o: vec![
+                GroupO::new("P1S", vec!["A+", "X+", "B+"], vec![]),
+            ],
+            groups_u: vec![
+                GroupU::new("16", vec!["1", "3", "15", "2_to_6", "16sub"], vec![]),
+            ],
+            comments: vec![
+                Comment::new("File used for the collections test"),
+            ],
+            custom_record: vec![
+                CustomRecord::new("X	custom_record	xx:Z:testtag"),
+            ],
+        };
+
+        assert_eq!(gfa_correct, gfa)
     }
 }

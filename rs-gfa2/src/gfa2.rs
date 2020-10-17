@@ -603,6 +603,46 @@ impl fmt::Display for GroupU {
     }
 }
 
+/// define a struct to holds the comment lines of a file
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub struct Comment {
+    pub comment: String,
+}
+
+impl Comment {
+    pub fn new(comment: &str) -> Comment {
+        Comment {
+            comment: comment.to_string(),
+        }
+    }
+}
+
+impl fmt::Display for Comment {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "# {}", self.comment)
+    }
+}
+
+/// define a struct to holds the custom lines of a file
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub struct CustomRecord {
+    pub record: String,
+}
+
+impl CustomRecord {
+    pub fn new(record: &str) -> CustomRecord {
+        CustomRecord {
+            record: record.to_string(),
+        }
+    }
+}
+
+impl fmt::Display for CustomRecord {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "# {}", self.record)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum Line {
     Header(Header),
@@ -612,8 +652,8 @@ pub enum Line {
     Gap(Gap),
     GroupO(GroupO),
     GroupU(GroupU),
-    Comment(String),
-    CustomRecord(String),
+    Comment(Comment),
+    CustomRecord(CustomRecord),
 }
 
 /// Returns a GFA2 object which is composed of:\
@@ -694,8 +734,8 @@ pub struct GFA2 {
     pub gaps: Vec<Gap>,
     pub groups_o: Vec<GroupO>,
     pub groups_u: Vec<GroupU>,
-    pub comments: Vec<String>,
-    pub custom_record: Vec<String>,
+    pub comments: Vec<Comment>,
+    pub custom_record: Vec<CustomRecord>,
 }
 
 impl GFA2 {

@@ -381,6 +381,25 @@ impl fmt::Display for Path {
     }
 }
 
+/// define a struct to holds the comment lines of a file
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub struct Comment {
+    pub comment: String,
+}
+
+impl Comment {
+    pub fn new(comment: &str) -> Comment {
+        Comment {
+            comment: comment.to_string(),
+        }
+    }
+}
+
+impl fmt::Display for Comment {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "# {}", self.comment)
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum Line {
@@ -389,7 +408,7 @@ pub enum Line {
     Link(Link),
     Containment(Containment),
     Path(Path),
-    Comment(String),
+    Comment(Comment),
 }
 
 /// Returns a GFA object which is composed of:\
@@ -452,7 +471,7 @@ pub struct GFA {
     pub links: Vec<Link>,
     pub containments: Vec<Containment>,
     pub paths: Vec<Path>,
-    pub comments: Vec<String>,
+    pub comments: Vec<Comment>,
 }
 
 impl GFA {
