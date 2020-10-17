@@ -12,8 +12,11 @@ use std::{
     path::PathBuf,
 };
 
+#[path = "error/error.rs"]
+pub mod error;
+use error::GFAError;
+
 use crate::gfa2::*;
-use crate::error::GFAError;
 
 /// function that parses the id tag (added the optional vector part)
 fn parse_id(input: &str) -> IResult<&str, String> {
@@ -351,7 +354,7 @@ fn parse_line(line: &str) -> IResult<&str, Line> {
 /// # Examples
 /// 
 /// ```
-/// use rs_gfa2::parser_gfa2::*;
+/// use gfa2::parser_gfa2::*;
 /// use std::path::PathBuf;
 /// 
 /// // initialize the parser object

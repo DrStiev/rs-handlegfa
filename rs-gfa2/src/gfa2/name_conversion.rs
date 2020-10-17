@@ -1,0 +1,1 @@
+/// file that convert a gfa file into an hash map

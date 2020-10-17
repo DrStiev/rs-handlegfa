@@ -1,7 +1,7 @@
 /// define a custom error struct
 #[derive(Debug)]
 pub struct GFAError {
-    // TODO: add a way to describe what kind of error occured
+    // TODO: add a way to describe what kind of error has occured
     message: String,
 }
 

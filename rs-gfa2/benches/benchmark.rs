@@ -3,7 +3,7 @@ use criterion::*;
 use std::path::PathBuf;
 use glob::glob;
 
-use::rs_gfa2::{
+use gfa2::{
     parser_gfa::parse_gfa,
     parser_gfa2::parse_gfa as parse_gfa2,
 };

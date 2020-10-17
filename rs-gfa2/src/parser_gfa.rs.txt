@@ -251,7 +251,7 @@ fn parse_line(line: &str) -> IResult<&str, Line> {
 /// # Examples
 /// 
 /// ```
-/// use rs_gfa2::parser_gfa::*;
+/// use gfa2::parser_gfa::*;
 /// use std::path::PathBuf;
 /// 
 /// // initialize the parser object

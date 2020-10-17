@@ -112,6 +112,7 @@ mod tests {
         }
     }
 
+    /*
     #[test]
     fn can_parse_gfa1_file() {
         let gfa = crate::parser_gfa::parse_gfa(&PathBuf::from("test\\gfas\\gfa1_files\\prova.gfa"));
@@ -189,6 +190,7 @@ mod tests {
             Ok(res) => println!("{}", res),
         }
     }
+    */
 
     #[test]
     fn error_parse_gfa1_file() {

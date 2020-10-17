@@ -17,7 +17,7 @@ use std::fmt;
 /// # Examples
 /// 
 /// ```
-/// use rs_gfa2::gfa2::*;
+/// use gfa2::gfa2::*;
 /// 
 /// // inizialize a simple header 
 /// let simple_header = Header {
@@ -93,7 +93,7 @@ impl fmt::Display for Header {
 /// # Examples
 /// 
 /// ```
-/// use rs_gfa2::gfa2::*;
+/// use gfa2::gfa2::*;
 /// 
 /// // inizialize a simple segment 
 /// let simple_segment = Segment {
@@ -174,7 +174,7 @@ impl fmt::Display for Segment {
 /// # Examples
 /// 
 /// ```
-/// use rs_gfa2::gfa2::*;
+/// use gfa2::gfa2::*;
 /// 
 /// // inizialize a simple fragment 
 /// let simple_fragment = Fragment {
@@ -296,7 +296,7 @@ impl fmt::Display for Fragment {
 /// # Examples
 /// 
 /// ```
-/// use rs_gfa2::gfa2::*;
+/// use gfa2::gfa2::*;
 /// 
 /// // inizialize a simple edge 
 /// let simple_edge = Edge {
@@ -398,7 +398,7 @@ impl fmt::Display for Edge {
 /// # Examples
 /// 
 /// ```
-/// use rs_gfa2::gfa2::*;
+/// use gfa2::gfa2::*;
 /// 
 /// // inizialize a simple gap 
 /// let simple_gap = Gap {
@@ -483,7 +483,7 @@ impl fmt::Display for Gap {
 /// # Examples
 /// 
 /// ```
-/// use rs_gfa2::gfa2::*;
+/// use gfa2::gfa2::*;
 /// 
 /// // inizialize a simple o-group 
 /// let simple_o_group = GroupO {
@@ -556,7 +556,7 @@ impl fmt::Display for GroupO {
 /// # Examples
 /// 
 /// ```
-/// use rs_gfa2::gfa2::*;
+/// use gfa2::gfa2::*;
 /// 
 /// // inizialize a simple u-group 
 /// let simple_u_group = GroupU {
@@ -682,7 +682,7 @@ pub enum Line {
 /// # Examples
 /// 
 /// ```
-/// use rs_gfa2::gfa2::*;
+/// use gfa2::gfa2::*;
 /// 
 /// // inizialize a simple gfa2 object 
 /// let mut gfa2 = GFA2::new();    

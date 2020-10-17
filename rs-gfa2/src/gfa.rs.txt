@@ -15,7 +15,7 @@ use std::fmt;
 /// # Examples
 /// 
 /// ```
-/// use rs_gfa2::gfa::*;
+/// use gfa2::gfa::*;
 /// 
 /// // inizialize a simple header 
 /// let simple_header = Header {
@@ -68,7 +68,7 @@ impl fmt::Display for Header {
 /// # Examples
 /// 
 /// ```
-/// use rs_gfa2::gfa::*;
+/// use gfa2::gfa::*;
 /// 
 /// // inizialize a simple segment 
 /// let simple_segment = Segment {
@@ -163,7 +163,7 @@ impl fmt::Display for Orientation {
 /// # Examples
 /// 
 /// ```
-/// use rs_gfa2::gfa::*;
+/// use gfa2::gfa::*;
 /// 
 /// // inizialize a simple link 
 /// let simple_link = Link {
@@ -254,7 +254,7 @@ impl fmt::Display for Link {
 /// # Examples
 /// 
 /// ```
-/// use rs_gfa2::gfa::*;
+/// use gfa2::gfa::*;
 /// 
 /// // inizialize a simple Containment 
 /// let simple_containment = Containment {
@@ -341,7 +341,7 @@ impl fmt::Display for Containment {
 /// # Examples
 /// 
 /// ```
-/// use rs_gfa2::gfa::*;
+/// use gfa2::gfa::*;
 /// 
 /// // inizialize a simple Path 
 /// let simple_path = Path {
@@ -433,7 +433,7 @@ pub enum Line {
 /// # Examples
 /// 
 /// ```
-/// use rs_gfa2::gfa::*;
+/// use gfa2::gfa::*;
 /// 
 /// // inizialize a simple gfa object 
 /// let gfa_correct = GFA {
@@ -459,6 +459,7 @@ pub enum Line {
 ///         vec!["8M", "1M", "1M", "3M", "1M", "19M", "1M", "4M", "1M", "11M"],
 ///     )],
 ///     containments: vec![],
+///     comments: vec![],
 /// };
 /// // inizialize an empty GFA object 
 /// let empty_gfa = GFA::new();

@@ -19,7 +19,7 @@ fn main() {
     // USAGE! ./target/debug/rs-gfa2 <INPUT> <FORMAT>
 
     // use clap as a macro to handle the argument passed as parameters via command line
-   let matches = clap_app!(rs_gfa2 =>
+   let matches = clap_app!(gfa2 =>
     (version: "1.0")
     (author: "Stievano Matteo <m.stievano1@campus.unimib.it>")
     (about: "The point of this project is to extend the rs-gfa library developed by \n\
