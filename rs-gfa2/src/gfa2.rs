@@ -1,3 +1,13 @@
+pub mod name_conversion;
+pub mod traits;
+
+pub use self::traits::*;
+
+use crate::{alignment::CIGAR, tag::*};
+use bstr::{BStr, BString, ByteSlice};
+use serde::{Deserialize, Serialize};
+use std::fmt::{Display, Write};
+
 /// implement the Display trait for all the struct in gfa2.rs
 use std::fmt;
 
@@ -41,28 +51,35 @@ use std::fmt;
 /// };
 /// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct Header {
-    pub version: String,
-    pub tag: Vec<String>,
+pub struct Header<T: OptFields> {
+    pub version: Option<BString>,
+    pub tag: T,
 }
 
-impl Header {
-    pub fn new(version: &str, tag: Vec<&str>) -> Header {
+impl<T: OptFields> Default for Header<T> {
+    fn default() -> Self {
         Header {
-            version: version.to_string(),
-            tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
+            version: Some("2.0".into()),
+            tag: Default::default(),
         }
     }
 }
 
-impl fmt::Display for Header {
+impl<T: OptFields> Header<T> {
+    pub(crate) fn nameless_clone<M: Default>(&self) -> Header<T> {
+        Header {
+            version: Default::default(),
+            tag: self.tag.clone(),
+        }
+    }
+}
+
+impl fmt::Display for Header<OptionalFields> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "H\t{}\t{}",
-            self.version,
-            // this inline method is useful but add a tabspace at the end of the tag 
-            // creating so an incorrect string 
+            self.version.unwrap(),
             self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
         )
     }
@@ -103,26 +120,46 @@ impl fmt::Display for Header {
 ///     tag: vec![],
 /// };
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct Segment {
-    pub id: String,
-    pub len: String,
-    pub sequence: String,
-    pub tag: Vec<String>,
+#[derive(
+    Default, 
+    Debug, 
+    Clone, 
+    PartialEq, 
+    PartialOrd, 
+    Serialize, 
+    Deserialize, 
+    Hash,
+)]
+pub struct Segment<N, T: OptFields> {
+    pub id: N,
+    pub len: BString,
+    pub sequence: BString,
+    pub tag: T,
 }
 
-impl Segment {
-    pub fn new(name: &str, len: &str, sequence: &str, tag: Vec<&str>) -> Segment {
+impl<T: OptFields> Segment<BString, T> {
+    pub fn new(id: BString, len: BString, sequence: BString) -> Self {
         Segment {
-            id: name.to_string(),
-            len: len.to_string(),
-            sequence: sequence.to_string(),
-            tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
+            id: id,
+            len: len,
+            sequence: sequence,
+            tag: Default::default(),
         }
     }
 }
 
-impl fmt::Display for Segment {
+impl<N, T: OptFields> Segment<N, T> {
+    pub(crate) fn nameless_clone<M: Default>(&self) -> Segment<M, T> {
+        Segment {
+            id: Default::default(),
+            len: self.len.clone(),
+            sequence: self.sequence.clone(),
+            tag: self.tag.clone(),
+        }
+    }
+}
+
+impl fmt::Display for Segment<BString, OptionalFields> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -130,8 +167,6 @@ impl fmt::Display for Segment {
             self.id,
             self.len,
             self.sequence,
-            // this inline method is useful but add a tabspace at the end of the tag 
-            // creating so an incorrect string 
             self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
         )
     }
@@ -188,43 +223,66 @@ impl fmt::Display for Segment {
 ///     tag: vec![],
 /// };
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct Fragment {
-    pub id: String,
-    pub ext_ref: String, // orientation as final char (+-)
-    pub sbeg: String,
-    pub send: String, // dollar character as optional final char
-    pub fbeg: String,
-    pub fend: String,
-    pub alignment: String, // alignment field can be *, trace or CIGAR 
-    pub tag: Vec<String>,
+#[derive(
+    Default, 
+    Debug, 
+    Clone, 
+    PartialEq, 
+    PartialOrd, 
+    Serialize, 
+    Deserialize, 
+    Hash,
+)]
+pub struct Fragment<N, T: OptFields> {
+    pub id: N,
+    pub ext_ref: BString, // orientation as final char (+-)
+    pub sbeg: BString,
+    pub send: BString, // dollar character as optional final char
+    pub fbeg: BString,
+    pub fend: BString,
+    pub alignment: Option<CIGAR>, // alignment field can be *, trace or CIGAR 
+    pub tag: T,
 }
 
-impl Fragment {
+impl<T: OptFields> Fragment<BString, T> {
     pub fn new(
-        id: &str,
-        ext_ref: &str,
-        sbeg: &str,
-        send: &str,
-        fbeg: &str,
-        fend: &str,
-        alignment: &str,
-        tag: Vec<&str>,
-    ) -> Fragment {
+        id:BString,
+        ext_ref: BString,
+        sbeg: BString,
+        send: BString,
+        fbeg: BString,
+        fend: BString,
+        alignment: Option<CIGAR>,
+    ) -> Self {
         Fragment {
-            id: id.to_string(),
-            ext_ref: ext_ref.to_string(),
-            sbeg: sbeg.to_string(),
-            send: send.to_string(),
-            fbeg: fbeg.to_string(),
-            fend: fend.to_string(),
-            alignment: alignment.to_string(),
-            tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
+            id: id,
+            ext_ref: ext_ref,
+            sbeg: sbeg,
+            send: send,
+            fbeg: fbeg,
+            fend: fend,
+            alignment: alignment,
+            tag: Default::default(),
         }
     }
 }
 
-impl fmt::Display for Fragment {
+impl<N, T: OptFields> Fragment<N, T> {
+    pub(crate) fn nameless_clone<M: Default>(&self) -> Fragment<M, T> {
+        Fragment {
+            id: Default::default(),
+            ext_ref: self.ext_ref.clone(),
+            sbeg: self.sbeg.clone(),
+            send: self.send.clone(),
+            fbeg: self.fbeg.clone(),
+            fend: self.fend.clone(),
+            alignment: self.alignment.clone(),
+            tag: self.tag.clone(),
+        }
+    }
+}
+
+impl fmt::Display for Fragment<BString, OptionalFields> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -235,9 +293,7 @@ impl fmt::Display for Fragment {
             self.send,
             self.fbeg,
             self.fend,
-            self.alignment,
-            // this inline method is useful but add a tabspace at the end of the tag 
-            // creating so an incorrect string 
+            self.alignment.unwrap(),
             self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
         )
     }
@@ -311,46 +367,70 @@ impl fmt::Display for Fragment {
 ///     tag: vec![],
 /// };
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct Edge {
-    pub id: String, // optional id, can be either * or id tag
-    pub sid1: String, // orientation as final char (+-)
-    pub sid2: String, // orientation as final char (+-)
-    pub beg1: String,
-    pub end1: String, // dollar character as optional final char
-    pub beg2: String,
-    pub end2: String, // dollar character as optional final char
-    pub alignment: String, // alignment field can be *, trace or CIGAR
-    pub tag: Vec<String>,
+#[derive(
+    Default, 
+    Debug, 
+    Clone, 
+    PartialEq, 
+    PartialOrd, 
+    Serialize, 
+    Deserialize, 
+    Hash,
+)]
+pub struct Edge<N, T: OptFields> {
+    pub id: N, // optional id, can be either * or id tag
+    pub sid1: BString, // orientation as final char (+-)
+    pub sid2: BString, // orientation as final char (+-)
+    pub beg1: BString,
+    pub end1: BString, // dollar character as optional final char
+    pub beg2: BString,
+    pub end2: BString, // dollar character as optional final char
+    pub alignment: Option<CIGAR>, // alignment field can be *, trace or CIGAR
+    pub tag: T,
 }
 
-impl Edge {
+impl<T: OptFields> Edge<BString, T> {
     pub fn new(
-        id: &str,
-        sid1: &str,
-        sid2: &str,
-        beg1: &str,
-        end1: &str,
-        beg2: &str,
-        end2: &str,
-        alignment: &str,
-        tag: Vec<&str>,
-    ) -> Edge {
+        id: BString,
+        sid1: BString,
+        sid2: BString,
+        beg1: BString,
+        end1: BString,
+        beg2: BString,
+        end2: BString,
+        alignment: Option<CIGAR>,
+    ) -> Self {
         Edge {
-            id: id.to_string(),
-            sid1: sid1.to_string(),
-            sid2: sid2.to_string(),
-            beg1: beg1.to_string(),
-            end1: end1.to_string(),
-            beg2: beg2.to_string(),
-            end2: end2.to_string(),
-            alignment: alignment.to_string(),
-            tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
+            id: id,
+            sid1: sid1,
+            sid2: sid2,
+            beg1: beg1,
+            end1: end1,
+            beg2: beg2,
+            end2: end2,
+            alignment: alignment,
+            tag: Default::default(),
         }
     }
 }
 
-impl fmt::Display for Edge {
+impl<N, T: OptFields> Edge<N, T> {
+    pub(crate) fn nameless_clone<M: Default>(&self) -> Edge<M, T> {
+        Edge {
+            id: Default::default(),
+            sid1: self.sid1.clone(),
+            sid2: self.sid2.clone(),
+            beg1: self.beg1.clone(),
+            end1: self.end1.clone(),
+            beg2: self.beg2.clone(),
+            end2: self.end2.clone(),
+            alignment: self.alignment.clone(),
+            tag: self.tag.clone(),
+        }
+    }
+}
+
+impl fmt::Display for Edge<BString, OptionalFields> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -362,9 +442,7 @@ impl fmt::Display for Edge {
             self.end1,
             self.beg2,
             self.end2,
-            self.alignment,
-            // this inline method is useful but add a tabspace at the end of the tag 
-            // creating so an incorrect string 
+            self.alignment.unwrap(),
             self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
         )
     }
@@ -410,37 +488,58 @@ impl fmt::Display for Edge {
 ///     tag: vec![],
 /// };
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct Gap {
-    pub id: String, // optional id, can be either * or id tag
-    pub sid1: String, // orientation as final char (+-)
-    pub sid2: String, // orientation as final char (+-)
-    pub dist: String,
-    pub var: String,
-    pub tag: Vec<String>,
+#[derive(
+    Default, 
+    Debug, 
+    Clone, 
+    PartialEq, 
+    PartialOrd, 
+    Serialize, 
+    Deserialize, 
+    Hash,
+)]
+pub struct Gap<N, T: OptFields> {
+    pub id: N, // optional id, can be either * or id tag
+    pub sid1: BString, // orientation as final char (+-)
+    pub sid2: BString, // orientation as final char (+-)
+    pub dist: BString,
+    pub var: BString,
+    pub tag: T,
 }
 
-impl Gap {
+impl<T: OptFields> Gap<BString, T> {
     pub fn new(
-        id: &str,
-        sid1: &str,
-        sid2: &str,
-        dist: &str,
-        var: &str,
-        tag: Vec<&str>,
-    ) -> Gap {
+        id: BString,
+        sid1: BString,
+        sid2: BString,
+        dist: BString,
+        var: BString,
+    ) -> Self {
         Gap {
-            id: id.to_string(),
-            sid1: sid1.to_string(),
-            sid2: sid2.to_string(),
-            dist: dist.to_string(),
-            var: var.to_string(),
-            tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
+            id: id,
+            sid1: sid1,
+            sid2: sid2,
+            dist: dist,
+            var: var,
+            tag: Default::default(),
         }
     }
 }
 
-impl fmt::Display for Gap {
+impl<N, T: OptFields> Gap<N, T> {
+    pub(crate) fn nameless_clone<M: Default>(&self) -> Gap<M, T> {
+        Gap {
+            id: Default::default(),
+            sid1: self.sid1.clone(),
+            sid2: self.sid2.clone(),
+            dist: self.dist.clone(),
+            var: self.var.clone(),
+            tag: self.tag.clone(),
+        }
+    }
+}
+
+impl fmt::Display for Gap<BString, OptionalFields> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -450,8 +549,6 @@ impl fmt::Display for Gap {
             self.sid2,
             self.dist,
             self.var,
-            // this inline method is useful but add a tabspace at the end of the tag 
-            // creating so an incorrect string 
             self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
         )
     }
@@ -492,29 +589,46 @@ impl fmt::Display for Gap {
 ///     tag: vec!["xx:i:-1".to_string()],
 /// };
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct GroupO {
+#[derive(
+    Default, 
+    Debug, 
+    Clone, 
+    PartialEq, 
+    PartialOrd, 
+    Serialize, 
+    Deserialize, 
+    Hash,
+)]
+pub struct GroupO<N, T: OptFields> {
     // O-Group and U-Group are different only for one field
     // this field can implment or not an optional tag (using * char)
-    pub id: String, // optional id, can be either * or id tag
-    pub var_field: Vec<String>, // variable field, O-Group have this as optional tag
+    pub id: N, // optional id, can be either * or id tag
+    pub var_field: Vec<BString>, // variable field, O-Group have this as optional tag
                                 // instead U-Group have dis as normal tag   
-    pub tag: Vec<String>,  
+    pub tag: T,  
 }
 
-impl GroupO {
-    pub fn new(id: &str, var_field: Vec<&str>, tag: Vec<&str>) -> GroupO {
+impl<T: OptFields> GroupO<BString, T> {
+    pub fn new(id: BString, var_field: Vec<BString>) -> Self {
         GroupO {
-            id: id.to_string(),
-            var_field: var_field.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
-            // convert a Vec<T> to Vec<String>
-            // this conversion is used to convert Vec<&str> to Vec<String>
-            tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
+            id: id,
+            var_field: var_field,
+            tag: Default::default(),
         }
     }
 }
 
-impl fmt::Display for GroupO {
+impl<N, T: OptFields> GroupO<N, T> {
+    pub(crate) fn nameless_clone<M: Default>(&self) -> GroupO<M, T> {
+        GroupO {
+            id: Default::default(),
+            var_field: self.var_field.clone(),
+            tag: self.tag.clone(),
+        }
+    }
+}
+
+impl fmt::Display for GroupO<BString, OptionalFields> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -523,8 +637,6 @@ impl fmt::Display for GroupO {
             // this inline method is useful but add a whitespace at the end of the var_field 
             // creating so an incorrect string 
             self.var_field.iter().fold(String::new(), |acc, str| acc + &str.to_string() + " "),
-            // this inline method is useful but add a tabspace at the end of the tag 
-            // creating so an incorrect string 
             self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
         )
     }
@@ -565,29 +677,46 @@ impl fmt::Display for GroupO {
 ///     tag: vec![],
 /// };
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct GroupU {
+#[derive(
+    Default, 
+    Debug, 
+    Clone, 
+    PartialEq, 
+    PartialOrd, 
+    Serialize, 
+    Deserialize, 
+    Hash,
+)]
+pub struct GroupU<N, T: OptFields> {
     // O-Group and U-Group are different only for one field
     // this field can implment or not an optional tag (using * char)
-    pub id: String, // optional id, can be either * or id tag
-    pub var_field: Vec<String>, // variable field, O-Group have this as optional tag
+    pub id: N, // optional id, can be either * or id tag
+    pub var_field: Vec<BString>, // variable field, O-Group have this as optional tag
                                 // instead U-Group have dis as normal tag   
-    pub tag: Vec<String>,  
+    pub tag: T,  
 }
 
-impl GroupU {
-    pub fn new(id: &str, var_field: Vec<&str>, tag: Vec<&str>) -> GroupU {
+impl<T: OptFields> GroupU<BString, T> {
+    pub fn new(id: BString, var_field: Vec<BString>) -> Self {
         GroupU {
-            id: id.to_string(),
-            var_field: var_field.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
-            // convert a Vec<T> to Vec<String>
-            // this conversion is used to convert Vec<&str> to Vec<String>
-            tag: tag.iter().map(|&s| s.to_string()).collect::<Vec<String>>(),
+            id: id,
+            var_field: var_field,
+            tag: Default::default(),
         }
     }
 }
 
-impl fmt::Display for GroupU {
+impl<N, T: OptFields> GroupU<N, T> {
+    pub(crate) fn nameless_clone<M: Default>(&self) -> GroupU<M, T> {
+        GroupU {
+            id: Default::default(),
+            var_field: self.var_field.clone(),
+            tag: self.tag.clone(),
+        }
+    }
+}
+
+impl fmt::Display for GroupU<BString, OptionalFields> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -641,19 +770,6 @@ impl fmt::Display for CustomRecord {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "# {}", self.record)
     }
-}
-
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub enum Line {
-    Header(Header),
-    Segment(Segment),
-    Fragment(Fragment),
-    Edge(Edge),
-    Gap(Gap),
-    GroupO(GroupO),
-    GroupU(GroupU),
-    Comment(Comment),
-    CustomRecord(CustomRecord),
 }
 
 /// Returns a GFA2 object which is composed of:\
@@ -723,38 +839,182 @@ pub enum Line {
 /// // inizialize an empty GFA2 object 
 /// let empty_gfa2 = GFA2::new();
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct GFA2 {
+#[derive(Default, Debug, Clone, PartialEq, PartialOrd)]
+pub struct GFA2<N, T:OptFields> { // OptFields is used to encode the <tag>* item
     // struct to hold the results of parsing a file; not actually a graph
     // TODO: implement an handlegraph to hold the result of the parsing of a GFA2 file
-    pub headers: Vec<Header>,
-    pub segments: Vec<Segment>,
-    pub fragments: Vec<Fragment>,
-    pub edges: Vec<Edge>,
-    pub gaps: Vec<Gap>,
-    pub groups_o: Vec<GroupO>,
-    pub groups_u: Vec<GroupU>,
+    pub headers: Vec<Header<T>>,
+    pub segments: Vec<Segment<N, T>>,
+    pub fragments: Vec<Fragment<N, T>>,
+    pub edges: Vec<Edge<N, T>>,
+    pub gaps: Vec<Gap<N, T>>,
+    pub groups_o: Vec<GroupO<N, T>>,
+    pub groups_u: Vec<GroupU<N, T>>,
     pub comments: Vec<Comment>,
     pub custom_record: Vec<CustomRecord>,
 }
 
-impl GFA2 {
-    pub fn new() -> Self {
-        GFA2 {
-            headers: vec![],
-            segments: vec![],
-            fragments: vec![],
-            edges: vec![],
-            gaps: vec![],
-            groups_o: vec![],
-            groups_u: vec![],
-            comments: vec![],
-            custom_record: vec![],
+/// Enum containing the different kinds of GFA2 lines.
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub enum Line<N, T:OptFields> {
+    Header(Header<T>),
+    Segment(Segment<N, T>),
+    Fragment(Fragment<N, T>),
+    Edge(Edge<N, T>),
+    Gap(Gap<N, T>),
+    GroupO(GroupO<N, T>),
+    GroupU(GroupU<N, T>),
+    Comment(Comment),
+    CustomRecord(CustomRecord),
+}
+
+macro_rules! some_line_fn {
+    ($name:ident, $tgt:ty, $variant:path) => {
+        impl<N, T: OptFields> Line<N, T> {
+            pub fn $name(self) -> Option<$tgt> {
+                if let $variant(x) = self {
+                    Some(x)
+                } else {
+                    None
+                }
+            }
         }
+    };
+}
+
+some_line_fn!(some_header, Header<T>, Line::Header);
+some_line_fn!(some_segment, Segment<N, T>, Line::Segment);
+some_line_fn!(some_fragment, Fragment<N, T>, Line::Fragment);
+some_line_fn!(some_edge, Edge<N, T>, Line::Edge);
+some_line_fn!(some_gap, Gap<N, T>, Line::Gap);
+some_line_fn!(some_ogroup, GroupO<N, T>, Line::GroupO);
+some_line_fn!(some_ugroup, GroupU<N, T>, Line::GroupU);
+// TODO: maybe I should delete dis lines?
+some_line_fn!(some_comment, Comment, Line::Comment);
+some_line_fn!(some_custom, CustomRecord, Line::CustomRecord);
+
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub enum LineRef<'a, N, T:OptFields> {
+    Header(&'a Header<T>),
+    Segment(&'a Segment<N, T>),
+    Fragment(&'a Fragment<N, T>),
+    Edge(&'a Edge<N, T>),
+    Gap(&'a Gap<N, T>),
+    GroupO(&'a GroupO<N, T>),
+    GroupU(&'a GroupU<N, T>),
+    Comment(&'a Comment),
+    CustomRecord(&'a CustomRecord),
+}
+
+macro_rules! some_line_ref_fn {
+    ($name:ident, $tgt:ty, $variant:path) => {
+        impl<'a, N, T: OptFields> LineRef<'a, N, T> {
+            pub fn $name(self) -> Option<&'a $tgt> {
+                if let $variant(x) = self {
+                    Some(x)
+                } else {
+                    None
+                }
+            }
+        }
+    };
+}
+
+some_line_ref_fn!(some_header, Header<T>, LineRef::Header);
+some_line_ref_fn!(some_segment, Segment<N, T>, LineRef::Segment);
+some_line_ref_fn!(some_fragment, Fragment<N, T>, LineRef::Fragment);
+some_line_ref_fn!(some_edge, Edge<N, T>, LineRef::Edge);
+some_line_ref_fn!(some_gap, Gap<N, T>, LineRef::Gap);
+some_line_ref_fn!(some_ogroup, GroupO<N, T>, LineRef::GroupO);
+some_line_ref_fn!(some_ugroup, GroupU<N, T>, LineRef::GroupU);
+// TODO: maybe I should delete dis lines?
+some_line_ref_fn!(some_comment, Comment, LineRef::Comment);
+some_line_ref_fn!(some_custom, CustomRecord, LineRef::CustomRecord);
+
+/// Insert a GFA line (wrapped in the Line enum) into an existing
+/// GFA. Simply pushes it into the corresponding Vec in the GFA,
+/// or replaces the header, so there's no deduplication or sorting
+/// taking place.
+impl<N, T: OptFields> GFA2<N, T> {
+    /// Insert a GFA line (wrapped in the Line enum) into an existing
+    /// GFA. Simply pushes it into the corresponding Vec in the GFA,
+    /// or replaces the header, so there's no deduplication or sorting
+    /// taking place.
+    pub fn insert_line(&mut self, line: Line<N, T>) {
+        use Line::*;
+        match line {
+            Header(h) => self.headers.push(h),
+            Segment(s) => self.segments.push(s),
+            Fragment(f) => self.fragments.push(f),
+            Edge(e) => self.edges.push(e),
+            Gap(g) => self.gaps.push(g),
+            GroupO(o) => self.groups_o.push(o),
+            GroupU(u) => self.groups_u.push(u),
+            Comment(com) => self.comments.push(com),
+            CustomRecord(rec) => self.custom_record.push(rec),
+        }
+    }
+
+    /// Consume a GFA2 object to produce an iterator over all the lines
+    /// contained within. The iterator first produces all headers then segments,
+    /// fragments, edges, gaps, groups, comments and finally custom records
+    pub fn lines_into_iter(self) -> impl Iterator<Item = Line<N, T>> {
+        use Line::*;
+        let heads = self.headers.into_iter().map(Header);
+        let segs = self.segments.into_iter().map(Segment);
+        let frags = self.fragments.into_iter().map(Fragment);
+        let edges = self.edges.into_iter().map(Edge);
+        let gaps = self.gaps.into_iter().map(Gap);
+        let ogroups = self.groups_o.into_iter().map(GroupO);
+        let ugroups = self.groups_u.into_iter().map(GroupU);
+        
+        let comments = self.comments.into_iter().map(Comment);
+        let custom_records = self.custom_record.into_iter().map(CustomRecord);
+
+        heads
+            .chain(segs)
+            .chain(frags)
+            .chain(edges)
+            .chain(gaps)
+            .chain(ogroups)
+            .chain(ugroups)
+            .chain(comments)
+            .chain(custom_records)
+    }
+
+    /// Return an iterator over references to the lines in the GFA2
+    pub fn lines_iter(&'_ self) -> impl Iterator<Item = LineRef<'_, N, T>> {
+        use LineRef::*;
+        let heads = self.headers.iter().map(Header);
+        let segs = self.segments.iter().map(Segment);
+        let frags = self.fragments.iter().map(Fragment);
+        let edges = self.edges.iter().map(Edge);
+        let gaps = self.gaps.iter().map(Gap);
+        let ogroups = self.groups_o.iter().map(GroupO);
+        let ugroups = self.groups_u.iter().map(GroupU);
+        
+        let comments = self.comments.iter().map(Comment);
+        let custom_records = self.custom_record.iter().map(CustomRecord);
+
+        heads
+            .chain(segs)
+            .chain(frags)
+            .chain(edges)
+            .chain(gaps)
+            .chain(ogroups)
+            .chain(ugroups)
+            .chain(comments)
+            .chain(custom_records)
     }
 }
 
-impl fmt::Display for GFA2 {
+impl<N: SegmentId, T:OptFields> GFA2<N, T> {
+    pub fn new() -> Self {
+        Default::default()
+    }
+}
+
+impl fmt::Display for GFA2<BString, OptionalFields> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f, 
@@ -774,116 +1034,6 @@ impl fmt::Display for GFA2 {
 #[cfg(test)] 
 mod tests {
     use super::*;
-
-    #[test]
-    fn print_empty_gfa2_file() {
-        let gfa2 = GFA2::new();
-        println!("{}", gfa2);
-    }
-
-    #[test]
-    fn print_gfa2_file_alternative() {
-        let mut gfa2 = GFA2::new();
-        
-        gfa2.headers = vec![
-            Header{
-                version: "VN:Z:2.0".to_string(),
-                tag: vec![],
-            }
-        ];
-        gfa2.segments = vec![
-            Segment {
-                id: "1".to_string(),
-                len: "8".to_string(),
-                sequence: "CGATGCAA".to_string(),
-                tag: vec![],
-            },
-            Segment {
-                id: "2".to_string(),
-                len: "10".to_string(),
-                sequence: "TGCAAAGTAC".to_string(),
-                tag: vec![],
-            },
-            Segment {
-                id: "3".to_string(),
-                len: "21".to_string(),
-                sequence: "TGCAACGTATAGACTTGTCAC".to_string(),
-                tag: vec!["RC:i:4".to_string()],
-            },
-            Segment {
-                id: "4".to_string(),
-                len: "7".to_string(),
-                sequence: "TATATGC".to_string(),
-                tag: vec![],
-            },
-            Segment {
-                id: "5".to_string(),
-                len: "8".to_string(),
-                sequence: "CGATGATA".to_string(),
-                tag: vec![],
-            },
-            Segment {
-                id: "6".to_string(),
-                len: "4".to_string(),
-                sequence: "ATGA".to_string(),
-                tag: vec![],
-            },
-        ];
-        gfa2.fragments = vec![];
-        gfa2.edges = vec![
-            Edge {
-                id: "*".to_string(),
-                sid1: "1+".to_string(),
-                sid2: "2+".to_string(),
-                beg1: "3".to_string(),
-                end1: "8$".to_string(),
-                beg2: "0".to_string(),
-                end2: "5".to_string(),
-                alignment: "0,2,4".to_string(),
-                tag: vec!["TS:i:2".to_string()],
-            },
-            Edge {
-                id: "*".to_string(),
-                sid1: "3+".to_string(),
-                sid2: "2+".to_string(),
-                beg1: "21$".to_string(),
-                end1: "21$".to_string(),
-                beg2: "0".to_string(),
-                end2: "0".to_string(),
-                alignment: "0M".to_string(),
-                tag: vec![],
-            },
-            Edge {
-                id: "*".to_string(),
-                sid1: "3+".to_string(),
-                sid2: "4-".to_string(),
-                beg1: "16".to_string(),
-                end1: "21$".to_string(),
-                beg2: "3".to_string(),
-                end2: "7$".to_string(),
-                alignment: "1M1D3M".to_string(),
-                tag: vec![],
-            },
-            Edge {
-                id: "*".to_string(),
-                sid1: "4-".to_string(),
-                sid2: "5+".to_string(),
-                beg1: "0".to_string(),
-                end1: "0".to_string(),
-                beg2: "0".to_string(),
-                end2: "0".to_string(),
-                alignment: "0M".to_string(),
-                tag: vec![],
-            },
-        ];
-        gfa2.gaps = vec![];
-        gfa2.groups_o = vec![];
-        gfa2.groups_u = vec![];
-
-        // comments will not be printed 
-        gfa2.comments = vec![];
-        gfa2.custom_record = vec![];
-
-        println!("{}", gfa2);
-    }
+    // TODO: ADD NEW TESTS 
+    // TODO: FIX THE DOC TESTS!
 }

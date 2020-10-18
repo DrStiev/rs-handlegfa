@@ -1,3 +1,5 @@
+// TODO: USE ME SENPAI (and improve me if possible :*)
+
 use criterion::*;
 
 use std::path::PathBuf;
@@ -7,9 +9,6 @@ use gfa2::{
     parser_gfa::parse_gfa,
     parser_gfa2::parse_gfa as parse_gfa2,
 };
-
-// TODO: improve the performance of the parser with big files
-// static BIGGFAPATH: &str = "./test/gfas/big_file/*";
 
 fn bench_files() {
     for e in glob("./test/gfas/gfa1_files/*").expect("Failed to read directory") {
