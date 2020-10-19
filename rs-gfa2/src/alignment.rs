@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 
 #[repr(u8)]
 #[derive(
-    
     Contiguous,
     Clone,
     Copy,

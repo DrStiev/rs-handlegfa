@@ -93,12 +93,10 @@ impl error::Error for ParseFieldError {}
 /// Type encapsulating different kinds of GFA parsing errors
 #[derive(Debug)]
 pub enum ParseError {
-    /*
-    /// The line type was something other than 'H', 'S', 'L', 'C', or
-    /// 'P'. This is ignored by the file parser rather than a fail
+    /// The line type was something other than 'H', 'S', 'F', 'E', 
+    /// 'G', 'O' or 'U'. This is ignored by the file parser rather than a fail
     /// condition.
     UnknownLineType,
-    */
     /// Tried to parse an empty line. Can be ignored.
     EmptyLine,
     /// A line couldn't be parsed. Includes the problem line and a
@@ -115,13 +113,9 @@ impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use ParseError as PE;
         match self {
-            /* this is not use anymore
-            * in fact, the GFA2 allows to create custom records using unknown lines
-            * these lines should be ignored by the parser
             PE::UnknownLineType => {
-                write!(f, "Line type was not one of 'H', 'S', 'L', 'C', 'P'")
+                write!(f, "Line type was not one of 'H', 'S', 'F', 'E', 'G', 'O' or 'U'")
             }
-            */
             PE::EmptyLine => write!(f, "Line was empty"),
             PE::InvalidLine(field_err, line) => {
                 write!(f, "Failed to parse line {}, error: {}", line, field_err)
@@ -162,7 +156,7 @@ impl ParseError {
             Tol::IgnoreAll => true,
             Tol::Safe => match self {
                 ParseError::EmptyLine => true,
-                // ParseError::UnknownLineType => true,
+                ParseError::UnknownLineType => true,
                 _ => false,
             },
             Tol::Pedantic => false,

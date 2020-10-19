@@ -1,5 +1,5 @@
 /// file that tries to mimic the behaviour of the file optfields.rs 
-/// optfields.rs find, parse and dtore all the different types of
+/// optfields.rs find, parse and store all the different types of
 /// optional fields associated to each kind of lines.
 /// with the format GFA2 the optional field tag is been replaced by a 
 /// simple tag element with 0 or N occurencies.
@@ -234,11 +234,4 @@ impl OptFields for Vec<OptField> {
             .filter_map(|f| OptField::parse(f.as_ref()))
             .collect()
     }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    // TODO: ADD NEW TESTS
-    // TODO: ADD DOCS
 }

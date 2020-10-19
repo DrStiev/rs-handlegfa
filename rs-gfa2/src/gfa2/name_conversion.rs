@@ -73,15 +73,6 @@ fn hash_gfa2<T: OptFields>(gfa2: &GFA2<BString, T>) -> u64 {
         ugroup.var_field.hash(&mut hasher);
     }
 
-    // TODO: idk if add or not the comment section
-    for comment in gfa2.comments.iter() {
-        comment.comment.hash(&mut hasher);
-    }
-
-    for record in gfa2.custom_record.iter() {
-        record.record.hash(&mut hasher);
-    }
-
     hasher.finish()
 }
 
@@ -180,7 +171,156 @@ impl NameMap {
         self.inverse_map.get(id).map(|bs| bs.as_ref())
     }
 
-    pub fn gfa_bstring_to_usize<T: OptFields>(
+    fn map_ogroup_segments<T: OptFields>(
+        &self,
+        group: &GroupO<BString, T>,
+    ) -> Option<GroupO<usize, T>> {
+        let mut misses = 0;
+        let new_segs: BString = group
+            .iter()
+            .filter_map(|(seg, o)| {
+                let n = self.map_name(seg).map(|s| (s, o));
+                if n.is_none() {
+                    misses += 1;
+                }
+                n
+            })
+            .enumerate()
+            .flat_map(|(i, (seg, o))| {
+                let s = if i == 0 {
+                    format!("{}{}", seg, o)
+                } else {
+                    format!(" {}{}", seg, o)
+                };
+                Vec::from(s.as_bytes())
+            })
+            .collect();
+
+            if misses > 0 {
+                return None;
+            }
+            let new_ogroup = GroupO::new(
+                group.id.clone(),
+                new_segs,
+                group.tag.clone(),
+            );
+
+            Some(new_ogroup)
+    }
+
+    fn inverse_map_ogroup_segments<T: OptFields>(
+        &self,
+        group: &GroupO<usize, T>,
+    ) -> Option<GroupO<BString, T>> {
+        let mut misses = 0;
+        let new_segs: BString = group
+            .iter()
+            .filter_map(|(seg, o)| {
+                let n = self.inverse_map.get(seg).map(|s| (s, o));
+                if n.is_none() {
+                    misses += 1;
+                }
+                n
+            })
+            .enumerate()
+            .flat_map(|(i, (seg, o))| {
+                let s = if i == 0 {
+                    format!("{}{}", seg, o)
+                } else {
+                    format!(" {}{}", seg, o)
+                };
+                Vec::from(s.as_bytes())
+            })
+            .collect();
+
+            if misses > 0 {
+                return None;
+            }
+            let new_ogroup = GroupO::new(
+                group.id.clone(),
+                new_segs,
+                group.tag.clone(),
+            );
+
+            Some(new_ogroup)
+    }
+
+    fn map_ugroup_segments<T: OptFields>(
+        &self,
+        group: &GroupU<BString, T>,
+    ) -> Option<GroupU<usize, T>> {
+        let mut misses = 0;
+        let new_segs: BString = group
+            .iter()
+            .filter_map(|seg| {
+                let n = self.map_name(seg).map(|s| s);
+                if n.is_none() {
+                    misses += 1;
+                }
+                n
+            })
+            .enumerate()
+            .flat_map(|(i, seg)| {
+                let s = if i == 0 {
+                    format!("{}", seg)
+                } else {
+                    format!(" {}", seg)
+                };
+                Vec::from(s.as_bytes())
+            })
+            .collect();
+
+            if misses > 0 {
+                return None;
+            }
+            let new_ugroup = GroupU::new(
+                group.id.clone(),
+                new_segs,
+                group.tag.clone(),
+            );
+
+            Some(new_ugroup)
+    }
+
+    fn inverse_map_ugroup_segments<T: OptFields>(
+        &self,
+        group: &GroupU<usize, T>,
+    ) -> Option<GroupU<BString, T>> {
+        let mut misses = 0;
+        let new_segs: BString = group
+            .iter()
+            .filter_map(|seg| {
+                let n = self.inverse_map.get(seg).map(|s| s);
+                if n.is_none() {
+                    misses += 1;
+                }
+                n
+            })
+            .enumerate()
+            .flat_map(|(i, seg)| {
+                let s = if i == 0 {
+                    format!("{}", seg)
+                } else {
+                    format!(" {}", seg)
+                };
+                Vec::from(s.as_bytes())
+            })
+            .collect();
+
+            if misses > 0 {
+                return None;
+            }
+            let new_ugroup = GroupU::new(
+                group.id.clone(),
+                new_segs,
+                group.tag.clone(),
+            );
+
+            Some(new_ugroup)
+    }
+
+
+    pub fn gfa2_bstring_to_usize<T: OptFields>(
         &self,
         gfa2: &GFA2<BString, T>,
         check_hash: bool,
@@ -228,16 +368,12 @@ impl NameMap {
         }
 
         for ogroup in gfa2.groups_o.iter() {
-            let id = self.map_name(&ogroup.id)?;
-            let mut new_ogroup: GroupO<usize, T> = ogroup.nameless_clone();
-            new_ogroup.id = id;
+            let new_ogroup = self.map_ogroup_segments(ogroup)?;
             ogroups.push(new_ogroup); 
         }
 
         for ugroup in gfa2.groups_u.iter() {
-            let id = self.map_name(&ugroup.id)?;
-            let mut new_ugroup: GroupU<usize, T> = ugroup.nameless_clone();
-            new_ugroup.id = id;
+            let new_ugroup = self.map_ugroup_segments(ugroup)?;
             ugroups.push(new_ugroup); 
         }
 
@@ -249,12 +385,10 @@ impl NameMap {
             gaps,
             groups_o : ogroups,
             groups_u: ugroups,
-            comments: gfa2.comments.clone(),
-            custom_record: gfa2.custom_record.clone(),
         })
     }
 
-    pub fn gfa_usize_to_bstring<T: OptFields>(
+    pub fn gfa2_usize_to_bstring<T: OptFields>(
         &self,
         gfa2: &GFA2<usize, T>,
     ) -> Option<GFA2<BString, T>> {
@@ -295,17 +429,13 @@ impl NameMap {
         }
 
         for ogroup in gfa2.groups_o.iter() {
-            let id = self.inverse_map_name(ogroup.id)?;
-            let mut new_ogroup: GroupO<BString, T> = ogroup.nameless_clone();
-            new_ogroup.id = id.into();
+            let new_ogroup = self.inverse_map_ogroup_segments(ogroup)?;
             ogroups.push(new_ogroup); 
         }
 
         for ugroup in gfa2.groups_u.iter() {
-            let id = self.inverse_map_name(ugroup.id)?;
-            let mut new_ugroup: GroupU<BString, T> = ugroup.nameless_clone();
-            new_ugroup.id = id.into();
-            ugroups.push(new_ugroup);
+            let new_ugroup = self.inverse_map_ugroup_segments(ugroup)?;
+            ugroups.push(new_ugroup); 
         }
         
         Some(GFA2 {
@@ -316,8 +446,6 @@ impl NameMap {
             gaps,
             groups_o : ogroups,
             groups_u: ugroups,
-            comments: gfa2.comments.clone(),
-            custom_record: gfa2.custom_record.clone(),
         })
     }
 
@@ -356,14 +484,6 @@ impl NameMap {
             get_ix(gap.id.as_ref());
         }
 
-        for ogroup in gfa2.groups_o.iter() {
-            get_ix(ogroup.id.as_ref());
-        }
-
-        for ugroup in gfa2.groups_u.iter() {
-            get_ix(ugroup.id.as_ref());
-        }
-
         NameMap {
             name_map,
             inverse_map,
@@ -376,5 +496,33 @@ impl NameMap {
 mod tests {
     use super::*;
     use crate::parser_gfa2::GFA2Parser;
-    // TODO: ADD NEW TESTS
+
+    fn graph_nicernames() -> &'static str {
+        "test\\gfas\\gfa2_files\\graph_nicernames.gfa"
+    }
+
+    fn load_graph_nicernames() -> GFA2<BString, OptionalFields> {
+        let parser = GFA2Parser::new();
+        let gfa2 : GFA2<BString, OptionalFields> =
+            parser.parse_file(&"test\\gfas\\gfa2_files\\graph_nicernames.gfa").unwrap();
+        gfa2
+    }
+
+    #[test]
+    fn graph_nicernames_name_map_serde() {
+        let gfa2 = load_graph_nicernames();
+        let name_map = NameMap::build_from_gfa2(&gfa2);
+
+        let new_gfa = name_map.gfa2_bstring_to_usize(&gfa2, false).unwrap();
+
+        let _ = std::fs::remove_file(graph_nicernames());
+        name_map.save_json(graph_nicernames()).unwrap();
+        let loaded_map = NameMap::load_json(graph_nicernames()).unwrap();
+
+        assert_eq!(name_map, loaded_map);
+
+        let inverted_gfa = loaded_map.gfa2_usize_to_bstring(&new_gfa).unwrap();
+
+        assert_eq!(gfa2, inverted_gfa);
+    }
 }
