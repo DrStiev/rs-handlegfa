@@ -6,6 +6,18 @@ use bstr::{BString, ByteSlice};
 use lazy_static::lazy_static;
 use regex::bytes::Regex;
 
+// FIXME SENPAI
+/*
+impl<S: SegmentId> std::fmt::Display for dyn S 
+where
+    S: SegmentId,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self)
+    }
+}
+*/
+
 /// Trait for the types that can be parsed and used as segment IDs;
 /// will probably only be usize and BString.
 pub trait SegmentId: Sized + Default {

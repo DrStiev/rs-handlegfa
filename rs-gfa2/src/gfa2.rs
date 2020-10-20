@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 // TODO: add an handlegraph to hold the result of the parsing of a GFA2 file
-// TODO: add the Display trait to handle the print when gfa2 = GFA2<BString, ()>
+// TODO: add the Display trait 
 
 /// Returns an Header line 
 /// 
@@ -48,17 +48,6 @@ impl<T: OptFields> Default for Header<T> {
             version: Some("2.0".into()),
             tag: Default::default(),
         }
-    }
-}
-
-impl fmt::Display for Header<OptionalFields> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "H\t{}\t{}",
-            self.version.as_ref().unwrap(),
-            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
-        )
     }
 }
 
@@ -115,19 +104,6 @@ impl<N: SegmentId, T: OptFields> Segment<N, T> {
             sequence: self.sequence.clone(),
             tag: self.tag.clone(),
         }
-    }
-}
-
-impl fmt::Display for Segment<BString, OptionalFields> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "S\t{}\t{}\t{}\t{}",
-            self.id,
-            self.len,
-            self.sequence,
-            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
-        )
     }
 }
 
@@ -211,24 +187,7 @@ impl<N: SegmentId, T: OptFields> Fragment<N, T> {
     }
 }
 
-impl fmt::Display for Fragment<BString, OptionalFields> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "F\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
-            self.id,
-            self.ext_ref,
-            self.sbeg,
-            self.send,
-            self.fbeg,
-            self.fend,
-            self.alignment,
-            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
-        )
-    }
-}
-
-/// Returns a Edge line 
+/// Returns an Edge line 
 /// 
 /// # Examples
 /// 
@@ -313,24 +272,6 @@ impl<N: SegmentId, T: OptFields> Edge<N, T> {
     }
 }
 
-impl fmt::Display for Edge<BString, OptionalFields> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "E\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
-            self.id,
-            self.sid1,
-            self.sid2,
-            self.beg1,
-            self.end1,
-            self.beg2,
-            self.end2,
-            self.alignment,
-            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
-        )
-    }
-}
-
 /// Returns a Gap line 
 /// 
 /// # Examples
@@ -401,22 +342,7 @@ impl<N: SegmentId, T: OptFields> Gap<N, T> {
     }
 }
 
-impl fmt::Display for Gap<BString, OptionalFields> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "G\t{}\t{}\t{}\t{}\t{}\t{}",
-            self.id,
-            self.sid1,
-            self.sid2,
-            self.dist,
-            self.var,
-            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
-        )
-    }
-}
-
-/// Returns a O-Group line 
+/// Returns an O-Group line 
 /// 
 /// # Examples
 /// 
@@ -509,21 +435,7 @@ impl<T: OptFields> GroupO<usize, T> {
     } 
 }
 
-impl fmt::Display for GroupO<BString, OptionalFields> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "O\t{}\t{}\t{}",
-            self.id,
-            // this inline method is useful but add a whitespace at the end of the var_field 
-            // creating so an incorrect string 
-            self.var_field.to_string() + " ",
-            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
-        )
-    }
-}
-
-/// Returns a U-Group line 
+/// Returns an U-Group line 
 /// 
 /// # Examples
 /// 
@@ -602,22 +514,6 @@ impl<T: OptFields> GroupU<usize, T> {
             .split_str(b" ")
             .filter_map(Self::parse_segment_id)
     } 
-}
-
-impl fmt::Display for GroupU<BString, OptionalFields> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "U\t{}\t{}\t{}",
-            self.id,
-            // this inline method is useful but add a whitespace at the end of the var_field 
-            // creating so an incorrect string 
-            self.var_field.to_string() + " ",
-            // this inline method is useful but add a tabspace at the end of the tag 
-            // creating so an incorrect string 
-            self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
-        )
-    }
 }
 
 /// Returns a GFA2 object 
@@ -800,21 +696,5 @@ impl<N, T: OptFields> GFA2<N, T> {
 impl<N: SegmentId, T:OptFields> GFA2<N, T> {
     pub fn new() -> Self {
         Default::default()
-    }
-}
-
-impl fmt::Display for GFA2<BString, OptionalFields> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f, 
-            "{}{}{}{}{}{}{}",
-            self.headers.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
-            self.segments.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
-            self.fragments.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
-            self.edges.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
-            self.gaps.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
-            self.groups_o.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
-            self.groups_u.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
-        )
     }
 }

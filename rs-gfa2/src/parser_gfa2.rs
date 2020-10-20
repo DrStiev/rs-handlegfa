@@ -4,7 +4,7 @@ pub use self::error::{GFA2FieldResult, GFA2Result, ParseError, ParseFieldError};
 use bstr::{BStr, BString, ByteSlice};
 use lazy_static::lazy_static;
 use regex::bytes::Regex;
-use crate::{alignment::CIGAR, gfa2::*, tag::*};
+use crate::{gfa2::*, tag::*};
 
 use crate::parser_gfa2::error::ParserTolerance;
 
@@ -738,9 +738,11 @@ mod tests {
     }
 
     #[test]
-    fn can_parse_gfa2_file() {
-        let parser: GFA2Parser<bstr::BString, ()> = GFA2Parser::new();
-        let gfa2: GFA2<BString, ()> =
+    fn can_parse_gfa2_file_with_tag() {
+        use crate::print_gfa_2::*;
+
+        let parser: GFA2Parser<bstr::BString, OptionalFields> = GFA2Parser::new();
+        let gfa2: GFA2<BString, OptionalFields> =
             parser.parse_file(&"test\\gfa2_files\\sample2.gfa").unwrap();
         
         let head = gfa2.headers.len();
@@ -759,6 +761,21 @@ mod tests {
         assert_eq!(ogroup, 2);
         assert_eq!(ugroup, 2);
 
-        // print!("{}", gfa2);
+        let mut res = String::new();
+        print_gfa2(&gfa2, &mut res);
+        println!("{}", res);
+    }
+
+    #[test]
+    fn can_parse_gfa2_file_with_no_tag() {
+        use crate::print_gfa_2::*;
+
+        let parser: GFA2Parser<bstr::BString, OptionalFields> = GFA2Parser::new();
+        let gfa2: GFA2<BString, OptionalFields> =
+            parser.parse_file(&"test\\gfa2_files\\data.gfa").unwrap();
+    
+        let mut res = String::new();
+        print_gfa2(&gfa2, &mut res);
+        println!("{}", res);
     }
 }
