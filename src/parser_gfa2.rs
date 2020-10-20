@@ -272,6 +272,7 @@ where
         .ok_or(ParseFieldError::InvalidField("Reference"))
 }
 
+// TODO: change the way the header it's stored in a gfa2parser and add a new regex
 /// function that parses the HEADER field
 /// ```H {VN:Z:2.0} {TS:i:<trace spacing>} <tag>*```
 impl<T: OptFields> Header<T> {
@@ -608,7 +609,7 @@ mod tests {
         let result: GFA2FieldResult<Header<()>> = Header::parse_line([header].iter());
 
         match result {
-            Err(why) => println!("Error {}", why),
+            Err(why) => println!("Error: {}", why),
             Ok(h) => assert_eq!(h, header_),
         }
     }
@@ -627,7 +628,7 @@ mod tests {
         let result = Segment::parse_line(fields);
 
         match result{
-            Err(why) => println!("Error {}", why),
+            Err(why) => println!("Error: {}", why),
             Ok(s) => assert_eq!(s, segment_),
         }
     }
@@ -650,7 +651,7 @@ mod tests {
         let result = Fragment::parse_line(fields);
 
         match result{
-            Err(why) => println!("Error {}", why),
+            Err(why) => println!("Error: {}", why),
             Ok(f) => assert_eq!(f, fragment_),
         }
     }
@@ -674,7 +675,7 @@ mod tests {
         let result = Edge::parse_line(fields);
 
         match result{
-            Err(why) => println!("Error {}", why),
+            Err(why) => println!("Error: {}", why),
             Ok(e) => assert_eq!(e, edge_),
         }
     }
@@ -694,7 +695,7 @@ mod tests {
         let result = Gap::parse_line(fields);
 
         match result{
-            Err(why) => println!("Error {}", why),
+            Err(why) => println!("Error: {}", why),
             Ok(g) => assert_eq!(g, gap_),
         }
     }
@@ -732,15 +733,13 @@ mod tests {
         let result = GroupU::parse_line(fields);
 
         match result{
-            Err(why) => println!("Error {}", why),
+            Err(why) => println!("Error: {}", why),
             Ok(u) => assert_eq!(u, ugroup_),
         }
     }
 
     #[test]
     fn can_parse_gfa2_file_with_tag() {
-        use crate::print_gfa_2::*;
-
         let parser: GFA2Parser<bstr::BString, OptionalFields> = GFA2Parser::new();
         let gfa2: GFA2<BString, OptionalFields> =
             parser.parse_file(&"./test/gfa2_files/sample2.gfa").unwrap();
@@ -761,21 +760,15 @@ mod tests {
         assert_eq!(ogroup, 2);
         assert_eq!(ugroup, 2);
 
-        let mut res = String::new();
-        print_gfa2(&gfa2, &mut res);
-        println!("{}", res);
+        println!("{}", gfa2);
     }
 
     #[test]
     fn can_parse_gfa2_file_with_no_tag() {
-        use crate::print_gfa_2::*;
-
         let parser: GFA2Parser<bstr::BString, OptionalFields> = GFA2Parser::new();
         let gfa2: GFA2<BString, OptionalFields> =
             parser.parse_file(&"./test/gfa2_files/data.gfa").unwrap();
     
-        let mut res = String::new();
-        print_gfa2(&gfa2, &mut res);
-        println!("{}", res);
+        println!("{}", gfa2);
     }
 }

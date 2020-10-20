@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 // TODO: add an handlegraph to hold the result of the parsing of a GFA2 file
-// TODO: add the Display trait 
+// TODO: i don't like the way the header is stored in the GFA2 object, I think I will change it
 
 /// Returns an Header line 
 /// 
@@ -49,6 +49,25 @@ impl<T: OptFields> Default for Header<T> {
             tag: Default::default(),
         }
     }
+}
+
+impl<T: OptFields> fmt::Display for Header<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut opt = vec![];
+        for tag in self.tag.fields(){
+            opt.push(tag);
+        }
+        if let Some(v) = &self.version {
+            write!(
+                f,
+                "H\tVN:Z:{}\t{}",
+                v,
+                opt.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
+            )
+        } else {
+            write!(f, "H")
+        }        
+    }  
 }
 
 /// Returns a Segment line 
@@ -104,6 +123,23 @@ impl<N: SegmentId, T: OptFields> Segment<N, T> {
             sequence: self.sequence.clone(),
             tag: self.tag.clone(),
         }
+    }
+}
+
+impl<N: SegmentId, T: OptFields> fmt::Display for Segment<N, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut opt = vec![];
+        for tag in self.tag.fields(){
+            opt.push(tag);
+        }
+        write!(
+            f,
+            "S\t{}\t{}\t{}\t{}",
+            self.id,
+            self.len.as_bstr(),
+            self.sequence.as_bstr(),
+            opt.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
+        )
     }
 }
 
@@ -184,6 +220,27 @@ impl<N: SegmentId, T: OptFields> Fragment<N, T> {
             alignment: self.alignment.clone(),
             tag: self.tag.clone(),
         }
+    }
+}
+
+impl<N: SegmentId, T: OptFields> fmt::Display for Fragment<N, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut opt = vec![];
+        for tag in self.tag.fields(){
+            opt.push(tag);
+        }
+        write!(
+            f,
+            "F\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            self.id,
+            self.ext_ref.as_bstr(),
+            self.sbeg.as_bstr(),
+            self.send.as_bstr(),
+            self.fbeg.as_bstr(),
+            self.fend.as_bstr(),
+            self.alignment.as_bstr(),
+            opt.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
+        )
     }
 }
 
@@ -272,6 +329,28 @@ impl<N: SegmentId, T: OptFields> Edge<N, T> {
     }
 }
 
+impl<N: SegmentId, T: OptFields> fmt::Display for Edge<N, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut opt = vec![];
+        for tag in self.tag.fields(){
+            opt.push(tag);
+        }
+        write!(
+            f,
+            "E\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            self.id,
+            self.sid1.as_bstr(),
+            self.sid2.as_bstr(),
+            self.beg1.as_bstr(),
+            self.end1.as_bstr(),
+            self.beg2.as_bstr(),
+            self.end2.as_bstr(),
+            self.alignment.as_bstr(),
+            opt.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
+        )
+    }
+}
+
 /// Returns a Gap line 
 /// 
 /// # Examples
@@ -339,6 +418,25 @@ impl<N: SegmentId, T: OptFields> Gap<N, T> {
             var: self.var.clone(),
             tag: self.tag.clone(),
         }
+    }
+}
+
+impl<N: SegmentId, T: OptFields> fmt::Display for Gap<N, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut opt = vec![];
+        for tag in self.tag.fields(){
+            opt.push(tag);
+        }
+        write!(
+            f,
+            "G\t{}\t{}\t{}\t{}\t{}\t{}",
+            self.id,
+            self.sid1.as_bstr(),
+            self.sid2.as_bstr(),
+            self.dist.as_bstr(),
+            self.var.as_bstr(),
+            opt.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
+        )
     }
 }
 
@@ -435,6 +533,24 @@ impl<T: OptFields> GroupO<usize, T> {
     } 
 }
 
+impl<N: SegmentId, T: OptFields> fmt::Display for GroupO<N, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut opt = vec![];
+        for tag in self.tag.fields(){
+            opt.push(tag);
+        }
+        write!(
+            f,
+            "O\t{}\t{}\t{}",
+            self.id.as_bstr(),
+            // this inline method is useful but add a whitespace at the end of the var_field 
+            // creating so an incorrect string 
+            self.var_field.as_bstr().to_string() + " ",
+            opt.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
+        )
+    }
+}
+
 /// Returns an U-Group line 
 /// 
 /// # Examples
@@ -514,6 +630,27 @@ impl<T: OptFields> GroupU<usize, T> {
             .split_str(b" ")
             .filter_map(Self::parse_segment_id)
     } 
+}
+
+impl<N: SegmentId, T: OptFields> fmt::Display for GroupU<N, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut opt = vec![];
+        for tag in self.tag.fields(){
+            opt.push(tag);
+        }
+        write!(
+            f,
+            "U\t{}\t{}\t{}",
+            self.id.as_bstr(),
+            // this inline method is useful but add a whitespace at the end of the var_field 
+            // creating so an incorrect string 
+            self.var_field.as_bstr().to_string() + " ",
+            // this inline method is useful but add a tabspace at the end of the tag 
+            // creating so an incorrect string 
+            //self.tag.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
+            opt.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\t"),
+        )
+    }
 }
 
 /// Returns a GFA2 object 
@@ -696,5 +833,21 @@ impl<N, T: OptFields> GFA2<N, T> {
 impl<N: SegmentId, T:OptFields> GFA2<N, T> {
     pub fn new() -> Self {
         Default::default()
+    }
+}
+
+impl<N: SegmentId, T: OptFields> fmt::Display for GFA2<N, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f, 
+            "{}{}{}{}{}{}{}",
+            self.headers.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
+            self.segments.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
+            self.fragments.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
+            self.edges.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
+            self.gaps.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
+            self.groups_o.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
+            self.groups_u.iter().fold(String::new(), |acc, str| acc + &str.to_string() + "\n"),
+        )
     }
 }
