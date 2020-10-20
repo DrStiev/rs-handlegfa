@@ -743,7 +743,7 @@ mod tests {
 
         let parser: GFA2Parser<bstr::BString, OptionalFields> = GFA2Parser::new();
         let gfa2: GFA2<BString, OptionalFields> =
-            parser.parse_file(&"test\\gfa2_files\\sample2.gfa").unwrap();
+            parser.parse_file(&"./test/gfa2_files/sample2.gfa").unwrap();
         
         let head = gfa2.headers.len();
         let seg = gfa2.segments.len();
@@ -772,7 +772,7 @@ mod tests {
 
         let parser: GFA2Parser<bstr::BString, OptionalFields> = GFA2Parser::new();
         let gfa2: GFA2<BString, OptionalFields> =
-            parser.parse_file(&"test\\gfa2_files\\data.gfa").unwrap();
+            parser.parse_file(&"./test/gfa2_files/data.gfa").unwrap();
     
         let mut res = String::new();
         print_gfa2(&gfa2, &mut res);
