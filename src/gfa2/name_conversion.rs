@@ -497,27 +497,27 @@ mod tests {
     use super::*;
     use crate::parser_gfa2::GFA2Parser;
 
-    fn graph_nicernames() -> &'static str {
-        "test\\gfa2_files\\graph_nicernames.gfa"
+    fn irl() -> &'static str {
+        "test\\gfa2_files\\irl.gfa"
     }
 
-    fn load_graph_nicernames() -> GFA2<BString, OptionalFields> {
+    fn load_irl() -> GFA2<BString, OptionalFields> {
         let parser = GFA2Parser::new();
         let gfa2 : GFA2<BString, OptionalFields> =
-            parser.parse_file(&"test\\gfa2_files\\graph_nicernames.gfa").unwrap();
+            parser.parse_file(&"test\\gfa2_files\\irl.gfa").unwrap();
         gfa2
     }
 
     #[test]
-    fn graph_nicernames_name_map_serde() {
-        let gfa2 = load_graph_nicernames();
+    fn irl_name_map_serde() {
+        let gfa2 = load_irl();
         let name_map = NameMap::build_from_gfa2(&gfa2);
 
         let new_gfa = name_map.gfa2_bstring_to_usize(&gfa2, false).unwrap();
 
-        let _ = std::fs::remove_file(graph_nicernames());
-        name_map.save_json(graph_nicernames()).unwrap();
-        let loaded_map = NameMap::load_json(graph_nicernames()).unwrap();
+        let _ = std::fs::remove_file(irl());
+        name_map.save_json(irl()).unwrap();
+        let loaded_map = NameMap::load_json(irl()).unwrap();
 
         assert_eq!(name_map, loaded_map);
 
