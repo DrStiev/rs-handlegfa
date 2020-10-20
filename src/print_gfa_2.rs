@@ -136,7 +136,7 @@ fn write_ugroup<N: Display, T: Write, U: OptFields>(
 /// [mut]: https://doc.rust-lang.org/std/keyword.mut.html
 /// 
 /// # Example
-/// ```
+/// ```ignore
 /// use print_gfa2::*;
 /// use gfa2::*;
 /// use parser_gfa2::*;

@@ -17,8 +17,8 @@ use std::fmt;
 /// 
 /// # Examples
 /// 
-/// ```
-/// use gfa2::gfa2::*;
+/// ```ignore
+/// use gfa2::*;
 /// 
 /// // inizialize a simple header 
 /// let header = "VN:Z:2.0";
@@ -55,8 +55,8 @@ impl<T: OptFields> Default for Header<T> {
 /// 
 /// # Examples
 /// 
-/// ```
-/// use gfa2::gfa2::*;
+/// ```ignore
+/// use gfa2::*;
 /// use bstr::BString;
 /// 
 /// // inizialize a simple segment 
@@ -111,8 +111,8 @@ impl<N: SegmentId, T: OptFields> Segment<N, T> {
 /// 
 /// # Examples
 /// 
-/// ```
-/// use gfa2::gfa2::*;
+/// ```ignore
+/// use gfa2::*;
 /// use bstr::BString;
 /// 
 /// // inizialize a simple fragment 
@@ -191,8 +191,8 @@ impl<N: SegmentId, T: OptFields> Fragment<N, T> {
 /// 
 /// # Examples
 /// 
-/// ```
-/// use gfa2::gfa2::*;
+/// ```ignore
+/// use gfa2::*;
 /// use bstr::BString;
 /// 
 /// // inizialize a simple edge 
@@ -276,8 +276,8 @@ impl<N: SegmentId, T: OptFields> Edge<N, T> {
 /// 
 /// # Examples
 /// 
-/// ```
-/// use gfa2::gfa2::*;
+/// ```ignore
+/// use gfa2::*;
 /// use bstr::BString;
 /// 
 /// // inizialize a simple gap 
@@ -346,8 +346,8 @@ impl<N: SegmentId, T: OptFields> Gap<N, T> {
 /// 
 /// # Examples
 /// 
-/// ```
-/// use gfa2::gfa2::*;
+/// ```ignore
+/// use gfa2::*;
 /// use bstr::BString;
 /// 
 /// // inizialize a simple o-group 
@@ -439,8 +439,8 @@ impl<T: OptFields> GroupO<usize, T> {
 /// 
 /// # Examples
 /// 
-/// ```
-/// use gfa2::gfa2::*;
+/// ```ignore
+/// use gfa2::*;
 /// use bstr::BString;
 /// 
 /// // inizialize a simple u-group 
@@ -520,8 +520,8 @@ impl<T: OptFields> GroupU<usize, T> {
 /// 
 /// # Examples
 /// 
-/// ```
-/// use gfa2::gfa2::*;
+/// ```ignore
+/// use gfa2::*;
 /// use bstr::BString;
 /// 
 /// let gfa2: GFA2<BString, OptionalFields> = GFA2 {

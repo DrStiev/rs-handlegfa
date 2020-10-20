@@ -93,8 +93,8 @@ impl GFA2ParserBuilder {
 /// 
 /// # Examples
 /// 
-/// ```
-/// use gfa2::gfa2::*;
+/// ```ignore
+/// use gfa2::*;
 /// use bstr::BString;
 /// use parser_gfa2::GFA2Parser;
 /// 
