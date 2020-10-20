@@ -498,13 +498,13 @@ mod tests {
     use crate::parser_gfa2::GFA2Parser;
 
     fn graph_nicernames() -> &'static str {
-        "test\\gfas\\gfa2_files\\graph_nicernames.gfa"
+        "test\\gfa2_files\\graph_nicernames.gfa"
     }
 
     fn load_graph_nicernames() -> GFA2<BString, OptionalFields> {
         let parser = GFA2Parser::new();
         let gfa2 : GFA2<BString, OptionalFields> =
-            parser.parse_file(&"test\\gfas\\gfa2_files\\graph_nicernames.gfa").unwrap();
+            parser.parse_file(&"test\\gfa2_files\\graph_nicernames.gfa").unwrap();
         gfa2
     }
 
