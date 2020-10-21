@@ -9,7 +9,7 @@ mod tests {
     fn can_parse_gfa2_file_with_tag() {
         let parser: GFA2Parser<bstr::BString, OptionalFields> = GFA2Parser::new();
         let gfa2: GFA2<BString, OptionalFields> =
-            parser.parse_file(&"./test/gfa2_files/sample2.gfa").unwrap();
+            parser.parse_file(&"./tests/gfa2_files/sample2.gfa").unwrap();
         
         let head = gfa2.headers.len();
         let seg = gfa2.segments.len();
@@ -34,7 +34,7 @@ mod tests {
     fn can_parse_gfa2_file_with_no_tag() {
         let parser: GFA2Parser<bstr::BString, OptionalFields> = GFA2Parser::new();
         let gfa2: GFA2<BString, OptionalFields> =
-            parser.parse_file(&"./test/gfa2_files/data.gfa").unwrap();
+            parser.parse_file(&"./tests/gfa2_files/data.gfa").unwrap();
     
         println!("{}", gfa2);
     }
@@ -43,7 +43,7 @@ mod tests {
     fn can_parse_multiple_tag() {
         let parser: GFA2Parser<bstr::BString, OptionalFields> = GFA2Parser::new();
         let gfa2: GFA2<BString, OptionalFields> =
-            parser.parse_file(&"./test/gfa2_files/sample.gfa").unwrap();
+            parser.parse_file(&"./tests/gfa2_files/sample.gfa").unwrap();
     
         println!("{}", gfa2);
     }
