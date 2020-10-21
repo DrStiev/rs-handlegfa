@@ -272,7 +272,6 @@ where
         .ok_or(ParseFieldError::InvalidField("Reference"))
 }
 
-// TODO: change the way the header it's stored in a gfa2parser and add a new regex
 /// function that parses the HEADER field
 /// ```H {VN:Z:2.0} {TS:i:<trace spacing>} <tag>*```
 impl<T: OptFields> Header<T> {
@@ -289,16 +288,21 @@ impl<T: OptFields> Header<T> {
     {
         let next = next_field(&mut input)?;
         let version = OptField::parse(next.as_ref());
+        let version2 = version.clone();
         let version =
             if let Some(OptFieldVal::Z(version)) = version.map(|v| v.value) {
                 Some(version)
+            } else if let Some(OptFieldVal::I(version2)) = version2.map(|v| v.value) {
+                Some(version2)
             } else {
                 None
             };
-
         let tag = T::parse(input);
 
-        Ok(Header { version, tag })
+        Ok(Header { 
+            version, 
+            tag,
+         })
     }
 }
 
@@ -602,7 +606,9 @@ mod tests {
     fn can_parse_header() {
         let header = "VN:Z:2.0";
         let header_ = Header {
-            version: Some("2.0".into()),
+            // the version field of the header object is used to store
+            // the entire header tag without the optional (tag)*
+            version: Some("VN:Z:2.0".into()), 
             tag: (),
         };
 
@@ -768,6 +774,15 @@ mod tests {
         let parser: GFA2Parser<bstr::BString, OptionalFields> = GFA2Parser::new();
         let gfa2: GFA2<BString, OptionalFields> =
             parser.parse_file(&"./test/gfa2_files/data.gfa").unwrap();
+    
+        println!("{}", gfa2);
+    }
+
+    #[test]
+    fn can_parse_multiple_tag() {
+        let parser: GFA2Parser<bstr::BString, OptionalFields> = GFA2Parser::new();
+        let gfa2: GFA2<BString, OptionalFields> =
+            parser.parse_file(&"./test/gfa2_files/sample.gfa").unwrap();
     
         println!("{}", gfa2);
     }

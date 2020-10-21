@@ -4,7 +4,7 @@
 /// with the format GFA2 the optional field tag is been replaced by a 
 /// simple tag element with 0 or N occurencies.
 /// So, I don't think this file could be useful as the original.
-use bstr::{BString, ByteSlice};
+use bstr::BString;
 use lazy_static::lazy_static;
 use regex::bytes::Regex;
 
@@ -28,14 +28,13 @@ pub struct OptField {
 /// instead always holding i64 or f32.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum OptFieldVal {
-    A(u8),
-    Int(i64),
-    Float(f32),
     Z(BString),
+    I(BString),
+    F(BString),
+    A(BString),
     J(BString),
-    H(Vec<u32>),
-    BInt(Vec<i64>),
-    BFloat(Vec<f32>),
+    H(BString),
+    B(BString),
 }
 
 impl OptField {
@@ -56,70 +55,49 @@ impl OptField {
         OptField { tag, value }
     }
 
-    /// Parses an optional field from a bytestring in the format 
-    /// <tag> <- [A-Za-z0-9][A-Za-z0-9]:[ABHJZif]:[ -~]* = <TAG>:<TYPE>:<VALUE>
+    /// Parses the header and optional fields from a bytestring in the format\ 
+    /// ```<Header> <- {VN:Z:2.0}\t{TS:i:[-+]?[0-9]+}\t<tag>*```
+    /// ```<tag> <- <TAG>:<TYPE>:<VALUE> <- [A-Za-z0-9][A-Za-z0-9]:[ABHJZif]:[ -~]*```
     pub fn parse(input: &[u8]) -> Option<Self> {
         lazy_static! {
-            static ref RE_TAG: Regex =
-                Regex::new(r"(?-u)[A-Za-z][A-Za-z0-9]").unwrap();
-            static ref RE_CHAR: Regex = Regex::new(r"(?-u)[!-~]").unwrap();
-            static ref RE_INT: Regex = Regex::new(r"(?-u)[-+]?[0-9]+").unwrap();
-            static ref RE_FLOAT: Regex =
-                Regex::new(r"(?-u)[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?")
-                    .unwrap();
-            static ref RE_STRING: Regex = Regex::new(r"(?-u)[ !-~]+").unwrap();
-            static ref RE_BYTES: Regex = Regex::new(r"(?-u)[0-9A-F]+").unwrap();
+            static ref RE: Regex = 
+                Regex::new(r"(?-u)([A-Za-z0-9][A-Za-z0-9]:[ABHJZif]:[ -~]*)*").unwrap();
         }
 
         use OptFieldVal::*;
 
         let o_tag = input.get(0..=1)?;
         let o_type = input.get(3)?;
-        let o_contents = input.get(5..)?;
 
         let o_val = match o_type {
-            // char
-            b'A' => RE_CHAR.find(o_contents).map(|s| s.as_bytes()[0]).map(A),
-            // int
-            b'i' => RE_INT
-                .find(o_contents)
-                .and_then(|s| s.as_bytes().to_str().ok())
-                .and_then(|s| s.parse().ok())
-                .map(Int),
-            // float
-            b'f' => RE_FLOAT
-                .find(o_contents)
-                .and_then(|s| s.as_bytes().to_str().ok())
-                .and_then(|s| s.parse().ok())
-                .map(Float),
-            // string
-            b'Z' => RE_STRING
-                .find(o_contents)
+            b'A' => RE
+                .find(input)
+                .map(|s| s.as_bytes().into())
+                .map(A),
+            b'i' => RE
+                .find(input)
+                .map(|s| s.as_bytes().into())
+                .map(I),
+            b'f' => RE
+                .find(input)
+                .map(|s| s.as_bytes().into())
+                .map(F),
+            b'Z' => RE
+                .find(input)
                 .map(|s| s.as_bytes().into())
                 .map(Z),
-            // JSON string
-            b'J' => RE_STRING
-                .find(o_contents)
+            b'J' => RE
+                .find(input)
                 .map(|s| s.as_bytes().into())
                 .map(J),
-            // bytearray
-            b'H' => RE_BYTES
-                .find(o_contents)
-                .and_then(|s| s.as_bytes().to_str().ok())
-                .map(|s| s.chars().filter_map(|c| c.to_digit(16)))
-                .map(|s| H(s.collect())),
-            // float or int array
-            b'B' => {
-                let first = o_contents[0];
-                let rest = o_contents[1..]
-                    .split_str(b",")
-                    .filter_map(|s| s.as_bytes().to_str().ok());
-                if first == b'f' {
-                    Some(BFloat(rest.filter_map(|s| s.parse().ok()).collect()))
-                } else {
-                    Some(BInt(rest.filter_map(|s| s.parse().ok()).collect()))
-                }
-            }
+            b'H' => RE
+                .find(input)
+                .map(|s| s.as_bytes().into())
+                .map(H),
+            b'B' => RE
+                .find(input)
+                .map(|s| s.as_bytes().into())
+                .map(B),
             _ => None,
         }?;
 
@@ -128,41 +106,20 @@ impl OptField {
 }
 
 /// The Display implementation produces spec-compliant strings in the
-/// <TAG>:<TYPE>:<VALUE> format, and can be parsed back using
+/// ```<TAG>:<TYPE>:<VALUE>``` format, and can be parsed back using
 /// OptField::parse().
 impl std::fmt::Display for OptField {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, form: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use OptFieldVal::*;
 
-        write!(f, "{}{}:", char::from(self.tag[0]), char::from(self.tag[1]))?;
-
         match &self.value {
-            A(x) => write!(f, "A:{}", char::from(*x)),
-            Int(x) => write!(f, "i:{}", x),
-            Float(x) => write!(f, "f:{}", x),
-            Z(x) => write!(f, "Z:{}", x),
-            J(x) => write!(f, "J:{}", x),
-            H(x) => {
-                write!(f, "H:")?;
-                for a in x {
-                    write!(f, "{:x}", a)?
-                }
-                Ok(())
-            }
-            BInt(x) => {
-                write!(f, "B:I{}", x[0])?;
-                for a in x[1..].iter() {
-                    write!(f, ",{}", a)?
-                }
-                Ok(())
-            }
-            BFloat(x) => {
-                write!(f, "B:F{}", x[0])?;
-                for a in x[1..].iter() {
-                    write!(f, ",{}", a)?
-                }
-                Ok(())
-            }
+            A(x) => write!(form, "{}", x),
+            I(x) => write!(form, "{}", x),
+            F(x) => write!(form, "{}", x),
+            Z(x) => write!(form, "{}", x),
+            J(x) => write!(form, "{}", x),
+            H(x) => write!(form, "{}", x),
+            B(x) => write!(form, "{}", x),
         }
     }
 }

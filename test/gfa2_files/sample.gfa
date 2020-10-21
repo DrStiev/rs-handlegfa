@@ -1,12 +1,6 @@
-H	VN:Z:2.0
-S	1	8	CGATGCAA
-S	2	10	TGCAAAGTAC
-S	3	21	TGCAACGTATAGACTTGTCAC	RC:i:4
-S	4	7	TATATGC
-S	5	8	CGATGATA
-S	6	4	ATGA
-E	*	1+	2+	3	8$	0	5	0,2,4	TS:i:2
-E	*	3+	2+	21$	21$	0	0	0M
-E	*	3+	4-	16	21$	3	7$	1M1D3M
-E	*	4-	5+	0	0	0	0	0M
+# File used for the multiple tag test
+H	aa:i:15
+H	VN:Z:2.0    TS:i:15
+S	3	21	TGCAACGTATAGACTTGTCAC	RC:i:4  KC:i:485841 LN:i:1329
+E	*	1+	2+	3	8$	0	5	0,2,4	TS:i:2  zz:Z:tag    vo:J:{"labels":false}
 X	custom_record	xx:Z:testtag
