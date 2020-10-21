@@ -23,7 +23,7 @@ use std::fmt;
 /// // inizialize a simple header 
 /// let header = "VN:Z:2.0";
 /// let header_ = Header {
-///     version: Some("2.0".into()),
+///     version: Some("VN:Z:2.0".into()),
 ///     tag: (),
 /// };
 /// ```
