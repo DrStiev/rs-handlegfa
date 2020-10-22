@@ -9,3 +9,6 @@ edition = "2018"
 [dependencies]
 bstr = "0.2"
 bio = "0.32"
+# your dependencies
+gfa2 = { path = "../rs-gfa2" } # as you may know the `..`
+# in the path refers to the mother folder of the current one

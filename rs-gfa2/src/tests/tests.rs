@@ -1,8 +1,10 @@
 #[cfg(test)]
 mod tests {
-    use gfa2::gfa2::*;
-    use gfa2::parser_gfa2::GFA2Parser;
-    use gfa2::tag::OptionalFields;
+    use gfa2::{
+        gfa2::*,
+        parser_gfa2::GFA2Parser,
+        tag::OptionalFields,
+    };
     use bstr::BString;
     
     #[test]

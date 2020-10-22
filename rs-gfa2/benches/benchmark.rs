@@ -6,9 +6,11 @@ use std::path::PathBuf;
 use bstr::io::*;
 use bstr::BString;
 
-use gfa2::gfa2::*;
-use gfa2::tag::*;
-use gfa2::parser_gfa2::*;
+use gfa2::{
+    gfa2::*,
+    tag::*,
+    parser_gfa2::*,
+};
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 
