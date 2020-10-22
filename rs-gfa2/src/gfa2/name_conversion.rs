@@ -498,13 +498,13 @@ mod tests {
     use crate::parser_gfa2::GFA2Parser;
 
     fn irl() -> &'static str {
-        "./tests/gfa2_files/irl.gfa"
+        "./src/tests/gfa2_files/irl.gfa"
     }
 
     fn load_irl() -> GFA2<BString, OptionalFields> {
         let parser = GFA2Parser::new();
         let gfa2 : GFA2<BString, OptionalFields> =
-            parser.parse_file(&"./tests/gfa2_files/irl.gfa").unwrap();
+            parser.parse_file(&"./src/tests/gfa2_files/irl.gfa").unwrap();
         gfa2
     }
 
