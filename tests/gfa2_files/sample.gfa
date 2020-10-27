@@ -1,0 +1,6 @@
+# File used for the multiple tag test
+H	aa:i:15
+H	VN:Z:2.0    TS:i:15
+S	3	21	TGCAACGTATAGACTTGTCAC	RC:i:4  KC:i:485841 LN:i:1329
+E	*	1+	2+	3	8$	0	5	0,2,4	TS:i:2  zz:Z:tag    vo:J:{"labels":false}
+X	custom_record	xx:Z:testtag
