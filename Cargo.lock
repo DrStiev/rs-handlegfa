@@ -304,7 +304,7 @@ dependencies = [
 [[package]]
 name = "gfa2"
 version = "0.4.2"
-source = "git+https://github.com/DrStiev/rs-gfa2#dec754488e9a1cf1ce0973ac030f60872d8cd4b3"
+source = "git+https://github.com/DrStiev/rs-gfa2#30b46e9ecfac5a0e8b33b0ff8a2fc1b3379387ac"
 dependencies = [
  "bstr",
  "bytemuck",
@@ -328,7 +328,7 @@ dependencies = [
 [[package]]
 name = "handlegraph2"
 version = "0.1.1"
-source = "git+https://github.com/DrStiev/rs-handlegraph2#60fb4e6052b1b22f06ec85787992a18ec63491b6"
+source = "git+https://github.com/DrStiev/rs-handlegraph2#337ee84fcda69a7bc3b86de5fbd5c76c4a8b2563"
 dependencies = [
  "bio",
  "bstr",
@@ -432,9 +432,9 @@ dependencies = [
 
 [[package]]
 name = "memchr"
-version = "2.3.3"
+version = "2.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3728d817d99e5ac407411fa471ff9800a778d88a24685968b36824eaf4bee400"
+checksum = "0ee1c47aaa256ecabcaea351eae4a9b01ef39ed810004e298d2511ed284b1525"
 
 [[package]]
 name = "multimap"
@@ -490,9 +490,9 @@ dependencies = [
 
 [[package]]
 name = "num-integer"
-version = "0.1.43"
+version = "0.1.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d59457e662d541ba17869cf51cf177c0b5f0cbf476c66bdc90bf1edac4f875b"
+checksum = "d2cc698a63b549a70bc047073d2949cce27cd1c7b0a4a862d08a8031bc2801db"
 dependencies = [
  "autocfg",
  "num-traits",
@@ -500,9 +500,9 @@ dependencies = [
 
 [[package]]
 name = "num-traits"
-version = "0.2.12"
+version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ac267bcc07f48ee5f8935ab0d24f316fb722d7a1292e2913f0cc196b29ffd611"
+checksum = "9a64b1ec5cda2586e284722486d802acf1f7dbdc623e2bfc57e65ca1cd099290"
 dependencies = [
  "autocfg",
 ]

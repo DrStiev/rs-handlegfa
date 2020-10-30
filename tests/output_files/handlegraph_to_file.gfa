@@ -1,0 +1,85 @@
+HashGraph {
+    max_id: NodeId(
+        13,
+    ),
+    min_id: NodeId(
+        11,
+    ),
+    graph: {
+        NodeId(
+            13,
+        ): Node {
+            sequence: "CTTGATT",
+            left_edges: [
+                Handle(
+                    25,
+                ),
+                Handle(
+                    23,
+                ),
+            ],
+            right_edges: [],
+            occurrences: {
+                0: 2,
+            },
+        },
+        NodeId(
+            12,
+        ): Node {
+            sequence: "CCTTGA",
+            left_edges: [
+                Handle(
+                    23,
+                ),
+            ],
+            right_edges: [
+                Handle(
+                    26,
+                ),
+            ],
+            occurrences: {
+                0: 1,
+            },
+        },
+        NodeId(
+            11,
+        ): Node {
+            sequence: "ACCTT",
+            left_edges: [],
+            right_edges: [
+                Handle(
+                    24,
+                ),
+                Handle(
+                    26,
+                ),
+            ],
+            occurrences: {
+                0: 0,
+            },
+        },
+    },
+    path_id: {
+        [
+            49,
+        ]: 0,
+    },
+    paths: {
+        0: Path {
+            path_id: 0,
+            name: "1",
+            is_circular: false,
+            nodes: [
+                Handle(
+                    22,
+                ),
+                Handle(
+                    24,
+                ),
+                Handle(
+                    26,
+                ),
+            ],
+        },
+    },
+}
