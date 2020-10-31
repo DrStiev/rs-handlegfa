@@ -6,38 +6,41 @@ use gfa2::{
 use handlegraph2::hashgraph::*;
 use std::io::prelude::*;
 use bstr::BString;
+use std::fs::File;
 
 /// Function that save an HashGraph object in a file 
+/// on a specific or default location 
 /// # Example
 /// ```ignore
 /// use handle_gfa::fileoperation::*;
-/// save_handlegraph(&graph, &"./tests/output_files/handlegraph_to_file.gfa");
+/// save_handlegraph(&graph, Some(String::from("./tests/output_files/handlegraph_to_file.gfa")));
 /// ```
-pub fn save_handlegraph<P: AsRef<std::path::Path>>(
-    graph: &HashGraph, 
-    filepath: P,
+pub fn save_handlegraph(
+    graph: &HashGraph,
+    path: Option<String>,
 ) -> std::io::Result<()> {
-    use std::fs::OpenOptions;
 
-    let mut file = OpenOptions::new().write(true).create(true).open(filepath)?;
+    let path = path.unwrap_or(String::from("./tests/output_files/default_path/save_graph.gfa"));
+    let mut file = File::create(path)?;
     file.write_all(format!("{:#?}", graph).as_bytes())?;
     file.sync_all()?;
     Ok(())
 }
 
 /// Function that save a GFA2 object in a file 
+/// on a specific or default location 
 /// # Example
 /// ```ignore
 /// use handle_gfa::fileoperation::*;
-/// save_gfa2(&gfa2, &"./tests/output_files/gfa2_to_file.gfa");
+/// save_gfa2(&gfa2, Some(String::from("./tests/output_files/gfa2_to_file.gfa")));
 /// ```
-pub fn save_gfa2<P: AsRef<std::path::Path>>(
-    gfa2: &GFA2<BString, OptionalFields>, 
-    filepath: P,
+pub fn save_gfa2(
+    gfa2: &GFA2<BString, OptionalFields>,
+    path: Option<String>,
 ) -> std::io::Result<()> {
-    use std::fs::OpenOptions;
 
-    let mut file = OpenOptions::new().write(true).create(true).open(filepath)?;
+    let path = path.unwrap_or(String::from("./tests/output_files/default_path/save_gfa2.gfa"));
+    let mut file = File::create(path)?;
     file.write_all(format!("{}", gfa2).as_bytes())?;
     file.sync_all()?;
     Ok(())
@@ -74,7 +77,14 @@ mod tests {
         graph.append_step(&path, h2);
         graph.append_step(&path, h3);
 
-        match save_handlegraph(&graph, &"./tests/output_files/handlegraph_to_file.gfa") {
+        // save file on a specific path
+        match save_handlegraph(&graph, Some(String::from("./tests/output_files/handlegraph_to_file.gfa"))) {
+            Ok(_) => println!("Handlegraph saved correctly!"),
+            Err(why) => println!("Error: {}", why), 
+        };
+
+        // save file on a default path
+        match save_handlegraph(&graph, None) {
             Ok(_) => println!("Handlegraph saved correctly!"),
             Err(why) => println!("Error: {}", why), 
         };
@@ -87,22 +97,26 @@ mod tests {
         let parser: GFA2Parser<bstr::BString, OptionalFields> = GFA2Parser::new();
         let gfa2: GFA2<BString, OptionalFields> = parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
 
-        match save_gfa2(&gfa2, &"./tests/output_files/gfa2_to_file.gfa") {
+        // save file on a specific path
+        match save_gfa2(&gfa2, Some(String::from("./tests/output_files/gfa2_to_file.gfa"))) {
+            Ok(_) => println!("GFA2 saved correctly!"),
+            Err(why) => println!("Error: {}", why), 
+        };
+
+        // save file on a default path
+        match save_gfa2(&gfa2, None) {
             Ok(_) => println!("GFA2 saved correctly!"),
             Err(why) => println!("Error: {}", why), 
         };
     }
 
     #[test]
-    fn can_overwritten_output_file() {
+    fn can_use_file_saved() {
         use gfa2::parser_gfa2::GFA2Parser;
 
         let parser: GFA2Parser<bstr::BString, OptionalFields> = GFA2Parser::new();
-        let gfa2: GFA2<BString, OptionalFields> = parser.parse_file("./tests/gfa2_files/big.gfa").unwrap();
-
-        match save_gfa2(&gfa2, &"./tests/output_files/gfa2_to_file.gfa") {
-            Ok(_) => println!("GFA2 saved correctly!"),
-            Err(why) => println!("Error: {}", why), 
-        };
+        let gfa2: GFA2<BString, OptionalFields> = parser.parse_file("./tests/output_files/gfa2_to_file.gfa").unwrap();
+        
+        println!("{}", gfa2);
     }
 }
