@@ -34,12 +34,12 @@ pub fn gfa2_to_handlegraph(path: String) -> HashGraph {
 /// use handle_gfa::graphoperation::*;
 /// 
 /// let mut graph = HashGraph::from_gfa(&gfa2);
-/// graph = add_node(graph, Some(b"TEST_NODE_1"), 14 as u64).unwrap();
+/// graph = add_node(graph, 14 as u64, Some(b"TEST_NODE_1")).unwrap();
 /// ```
 pub fn add_node<T: Into<NodeId>>(
     mut graph: HashGraph, 
-    sequence: Option<&[u8]>, 
     nodeid: T,
+    sequence: Option<&[u8]>, 
 ) -> std::result::Result<HashGraph, std::io::Error> {
     // get the last nodeid and then add a new node with 
     //  graph.create_handle(sequence, retrieved_nodeid)
@@ -85,7 +85,7 @@ pub fn add_link_between_nodes<T: Into<NodeId>>(
             Orientation::Forward
         }
     }; 
-    // println!("{:#?}", graph);
+
     let mut find_left: bool = false;
     let mut find_right: bool = false;
 
@@ -184,35 +184,94 @@ pub fn add_path(
     Ok(graph)
 }
 
-/// print an HashGraph object as a DeBrujin Graph (VERY OPTIONAL)
-pub fn print_pretty_graph(graph: &HashGraph) {
-    // get all the segment with:
-    // for handle in graph.all_handles()
-    // get the id and sequence and form a tuple(id, sequence) 
-    // order the tuples
+/// print an HashGraph object in a simplified way
+pub fn print_simple_graph(graph: &HashGraph) {
+    use bstr::BString;
 
-    // get all the edge with:
-    // for edge in graph.all_edges()
-    // let Edge(left, right) = edge
-    // get the id and orientation
-    // apply reverse and complement the sequence if orientation = '-'
-    // form tuple merging 2 segment tuple ((idleft, sequence)(idright, sequence))
+    /*
+    let orient = |rev: bool| {
+        if rev {
+            Orientation::Backward
+        } else {
+            Orientation::Forward
+        }
+    }; 
+    */
 
-    // add start and end tuple to the top and bottom of the "list"
-    // (START) (END)
-    // to obtain something like: 
-    // (START)
-    // ((1, A)(2, T))
-    // ...
-    // ((n-1, A)(n, T))
-    // (END)
+    println!("Graph : {{");
 
-    // handle then the graphic part (VERY OPTIONAL)
+    // get all the nodeid and sequence associated with them
+    for handle in graph.all_handles() {
+        let node_id: String = handle.id().to_string();
+        let sequence: BString = graph.sequence_iter(handle.forward()).collect();
+
+        println!("\t{} [sequence = {}]", node_id, sequence);
+    }
+
+    println!();
+
+    // get all the link (edge) between nodes
+    for edge in graph.all_edges() {
+        let Edge(left, right) = edge;
+
+        let from_node: String = if !left.id().to_string().is_empty(){
+            left.id().to_string()
+        } else {
+            "NUL".to_string()
+        };
+        let to_node: String = if !right.id().to_string().is_empty(){
+            right.id().to_string()
+        } else {
+            "NUL".to_string()
+        };
+
+        /*
+        let left_orient = orient(left.is_reverse());
+        let right_orient = orient(right.is_reverse());
+
+        let reversed_left;
+        let reversed_right;
+        */
+        
+        println!("\t{} --> {}", from_node, to_node);
+    }
+
+    println!();
+
+    // get all the path
+    let mut x :i64 = 0;
+    while !graph.get_path(&x).is_none() {
+        let path = graph.paths.get(&x).unwrap();
+        let mut first: bool = true;
+
+        for (ix, handle) in path.nodes.iter().enumerate() {
+            let node = graph.get_node(&handle.id()).unwrap();
+            if first {
+                first = false;
+                print!("\t");
+            }
+            if ix != 0 {
+                print!(" -> ");
+            }
+            print!("{}", node.sequence);
+        }
+
+        println!();
+        x += 1;
+    } 
+
+    println!("}}");
+    // TODO: print the graph as a DeBrujin one in a graphical way
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use gfa2::{
+        parser_gfa2::GFA2Parser,  
+        gfa2::GFA2,
+    };
 
     #[test]
     fn can_gfa2_to_handlegraph() {
@@ -222,17 +281,11 @@ mod tests {
 
     #[test]
     fn can_add_node() {
-        use gfa2::{
-            parser_gfa2::GFA2Parser,  
-            gfa2::GFA2,
-        };
-
         let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
         let gfa2: GFA2<usize, ()> = parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
-
         let graph = HashGraph::from_gfa(&gfa2);
 
-        match add_node(graph, Some(b"TEST_NODE_1"), 14 as u64) {
+        match add_node(graph, 14 as u64, Some(b"TEST_NODE_1")) {
             Ok(g) => println!("{:#?}", g),
             Err(why) => println!("Error: {}", why),
         };
@@ -240,18 +293,12 @@ mod tests {
 
     #[test]
     fn can_add_link() {
-        use gfa2::{
-            parser_gfa2::GFA2Parser,  
-            gfa2::GFA2,
-        };
-
         let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
         let gfa2: GFA2<usize, ()> = parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
-
         let mut graph = HashGraph::from_gfa(&gfa2);
 
-        graph = add_node(graph, Some(b"TEST_NODE_1"), 14 as u64).unwrap();
-        graph = add_node(graph, Some(b"TEST_NODE_2"), 15 as u64).unwrap();
+        graph = add_node(graph, 14 as u64, Some(b"TEST_NODE_1")).unwrap();
+        graph = add_node(graph, 15 as u64, Some(b"TEST_NODE_2")).unwrap();
 
         match add_link_between_nodes(graph, 14 as u64, 15 as u64) {
             Ok(g) => println!("{:#?}", g),
@@ -261,14 +308,8 @@ mod tests {
 
     #[test]
     fn can_add_path() {
-        use gfa2::{
-            parser_gfa2::GFA2Parser,  
-            gfa2::GFA2,
-        };
-
         let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
         let gfa2: GFA2<usize, ()> = parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
-
         let graph = HashGraph::from_gfa(&gfa2);
         let ids: Vec<&[u8]> = vec![b"11+", b"13+"];
 
@@ -282,5 +323,14 @@ mod tests {
             }, 
             Err(why) => println!("Error: {}", why),
         };
+    }
+
+    #[test]
+    fn can_print_graph() {
+        let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
+        let gfa2: GFA2<usize, ()> = parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
+        let graph = HashGraph::from_gfa(&gfa2);
+
+        print_simple_graph(&graph);
     }
 }

@@ -347,7 +347,7 @@ dependencies = [
 [[package]]
 name = "gfa2"
 version = "0.4.2"
-source = "git+https://github.com/DrStiev/rs-gfa2#30b46e9ecfac5a0e8b33b0ff8a2fc1b3379387ac"
+source = "git+https://github.com/DrStiev/rs-gfa2#5ecd68a36371624818035b4d84e51072f69ee478"
 dependencies = [
  "bstr",
  "bytemuck",
@@ -360,7 +360,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "handle_gfa"
+name = "handlegfa"
 version = "0.1.0"
 dependencies = [
  "bstr",
@@ -372,7 +372,7 @@ dependencies = [
 [[package]]
 name = "handlegraph2"
 version = "0.1.1"
-source = "git+https://github.com/DrStiev/rs-handlegraph2#337ee84fcda69a7bc3b86de5fbd5c76c4a8b2563"
+source = "git+https://github.com/DrStiev/rs-handlegraph2#bcf6f84c6a3f0e820f184ce0b5a5122df4684a9f"
 dependencies = [
  "bio",
  "bstr",

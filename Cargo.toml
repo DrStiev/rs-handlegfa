@@ -1,5 +1,5 @@
 [package]
-name = "handle_gfa"
+name = "handlegfa"
 version = "0.1.0"
 authors = ["DrStiev <55959491+DrStiev@users.noreply.github.com>"]
 edition = "2018"
