@@ -1,8 +1,14 @@
 H	VN:Z:2.0	
-S	13	0	CTTGATT	
-S	12	0	CCTTGA	
-S	11	0	ACCTT	
-E	*	12+	13+	0	0$	0	0$	0M	
-E	*	11+	12+	0	0$	0	0$	0M	
-E	*	11+	13+	0	0$	0	0$	0M	
-O	1	11+ 12+ 13+  	
+S	5	0	CGATGATA	
+S	4	0	GCATATA	
+S	6	0	ATGA	
+S	1	0	CGATGCAA	
+S	3	0	TGCAACGTATAGACTTGTCAC	
+S	2	0	TGCAAAGTAC	
+E	*	5+	6+	0	0$	0	0$	0M	
+E	*	4-	5+	0	0$	0	0$	0M	
+E	*	1+	2+	0	0$	0	0$	0M	
+E	*	3+	4-	0	0$	0	0$	0M	
+E	*	2-	3-	0	0$	0	0$	0M	
+O	default_path_id	4- 5+  	
+O	default_path_id	1+ 2+ 3+  	

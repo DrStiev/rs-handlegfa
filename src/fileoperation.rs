@@ -59,17 +59,39 @@ mod tests {
         graph.append_step(&path, h2);
         graph.append_step(&path, h3);
 
-        // save file on a specific path
+        // save file on a specific path 
         match save_file(&graph, Some(String::from("./tests/output_files/file.gfa"))) {
             Ok(_) => println!("Handlegraph saved correctly!"),
             Err(why) => println!("Error: {}", why), 
         };
+    }
 
-        // save file on a specific path
-        match save_file(&graph, Some(String::from("tests\\output_files\\file.gfa"))) {
-            Ok(_) => println!("Handlegraph saved correctly!"),
-            Err(why) => println!("Error: {}", why), 
+    #[test]
+    fn can_save_handlegraph_default_path() {
+        use handlegraph2::{
+            handle::Edge,
+            hashgraph::HashGraph,
+            mutablehandlegraph::MutableHandleGraph,
+            pathgraph::PathHandleGraph,
         };
+
+        let mut graph = HashGraph::new();
+        let h1 = graph.create_handle(b"ACCTT", 11);
+        let h2 = graph.create_handle(b"TCAAGG", 12);
+        let h3 = graph.create_handle(b"CTTGATT", 13);
+
+        // use .flip() to apply reverse complement to the node
+        graph.apply_orientation(h2.flip());
+
+        graph.create_edge(Edge(h1, h2));
+        graph.create_edge(Edge(h2, h3));
+        graph.create_edge(Edge(h1, h3));
+
+        let path = graph.create_path_handle(b"1", false);
+        // path: 1 -> 2 -> 3
+        graph.append_step(&path, h1);
+        graph.append_step(&path, h2);
+        graph.append_step(&path, h3);
 
         // save file on a default path
         match save_file(&graph, None) {

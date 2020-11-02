@@ -16,5 +16,4 @@ handlegraph2 = { git = "https://github.com/DrStiev/rs-handlegraph2" }
 # handlegraph2 = { path = "../rs-handlegraph2" }   
 
 bstr = "0.2"
-# handle the interface
 clap = "3.0.0-beta.2"
