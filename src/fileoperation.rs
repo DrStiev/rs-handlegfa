@@ -1,6 +1,13 @@
 use gfa2::gfa2::GFA2;
+use handlegraph2::{
+    conversion::*,
+    handle::{Direction, Edge, Handle, NodeId},
+    handlegraph::*,
+    hashgraph::{HashGraph, PathStep},
+    mutablehandlegraph::*,
+    pathgraph::PathHandleGraph,
+};
 
-use handlegraph2::hashgraph::*;
 use std::io::prelude::*;
 use bstr::BString;
 use std::fs::File;

@@ -45,6 +45,7 @@ const REMOVE_MESSAGE: &str = "To REMOVE an element to the graph (or an operation
 REMOVE [NODE|LINK|PATH] (case insensitive)";
 */
 
+// TODO: add user control to perform the print of the graph when it is too big
 fn operation(mut graph: HashGraph, file: &str) {
     use std::io;
     println!("\n{}\n\n{}\n", TEXT_MESSAGE, STOP_MESSAGE);
@@ -58,9 +59,9 @@ fn operation(mut graph: HashGraph, file: &str) {
         io::stdin().read_line(&mut input).expect("Failed to read input");
         // remember to use .trim()
         match input.to_uppercase().as_str().trim() {
-            // TODO: add control for empty or blank id
             "STOP" => stop = true,
             "ADD NODE" => {
+                // TODO: add control for empty or blank id
                 println!("\n{}", ADD_NODE_MESSAGE);
                 let mut stop_: bool = false;
                 while !stop_ {
@@ -91,6 +92,7 @@ fn operation(mut graph: HashGraph, file: &str) {
                 }
             },
             "ADD LINK" => {
+                // TODO: add control for empty or blank id
                 println!("\n{}", ADD_LINK_MESSAGE);
                 let mut stop_: bool = false;
                 while !stop_ {
@@ -116,6 +118,7 @@ fn operation(mut graph: HashGraph, file: &str) {
                 }
             },
             "ADD PATH" => {
+                // TODO: add control for empty or blank id
                 println!("\n{}", ADD_PATH_MESSAGE);
                 let mut stop_: bool = false;
                 while !stop_ {
@@ -201,10 +204,14 @@ fn main() {
     ).get_matches();
 
     let file = matches.value_of("INPUT").unwrap();
-    let graph: HashGraph = gfa2_to_handlegraph(file.to_string());
+    match gfa2_to_handlegraph(file.to_string()) {
+        Ok(g) => {
+            let graph: HashGraph = g;
+            println!();
+            print_simple_graph(&graph); 
 
-    println!();
-    print_simple_graph(&graph); 
-
-    operation(graph, file);
+            operation(graph, file)
+        },
+        Err(why) => println!("Error: {}", why),
+    };
 }

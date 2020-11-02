@@ -2,13 +2,9 @@
 use handlegraph2::{
     handle::{Handle, NodeId, Edge},
     hashgraph::HashGraph,
-    mutablehandlegraph::MutableHandleGraph,
+    mutablehandlegraph::*,
     pathgraph::PathHandleGraph,
-    handlegraph::iter::{
-        AllHandles,
-        HandleSequences,
-        AllEdges,
-    },
+    handlegraph::*,
 };
 
 pub mod error;
@@ -16,17 +12,20 @@ pub use self::error::*;
 
 /// Function that reads a ```GFA2``` files passed as input and return its
 /// corresponding ```HandleGraph```
-pub fn gfa2_to_handlegraph(path: String) -> HashGraph {
+pub fn gfa2_to_handlegraph(path: String) -> Result<HashGraph, GraphOperationError> {
     use gfa2::{
         parser_gfa2::GFA2Parser,  
         gfa2::GFA2,
     };
 
     let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
-    let gfa2: GFA2<usize, ()> = parser.parse_file(&path).unwrap();
+    let gfa2: GFA2<usize, ()> = match parser.parse_file(&path) {
+        Ok(g) => g,
+        Err(why) => return Err(GraphOperationError::FileError(why.to_string())),
+    }; 
     let graph: HashGraph = HashGraph::from_gfa(&gfa2);
 
-    graph
+    Ok(graph)
 }
 
 /// Function that adds a node in a graph checking if the provided ```NodeId``` already exists
@@ -235,8 +234,14 @@ pub fn print_simple_graph(graph: &HashGraph) {
     } 
 
     println!("}}");
-    // TODO: print the graph as a DeBrujin one in a graphical way
 }
+
+// TODO: print the graph as a DeBrujin one in a graphical way
+/// Print an HashGraph object as a DeBrujin graph (more or less)
+/// () -> (1) -> AATTCG -> (2) -> CTTGGA -> (3) -> GAACTG -> ()
+///         \                               ^    
+///          -------------> AGGTCAG -------/
+pub fn print_debrujin_graph(graph: &HashGraph) {}
 
 #[cfg(test)]
 mod tests {
@@ -258,8 +263,32 @@ mod tests {
 
     #[test]
     fn can_gfa2_to_handlegraph() {
-        let graph: HashGraph = gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa".to_string());
-        print_simple_graph(&graph);
+        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa".to_string()){
+            Ok(g) => {
+                let graph: HashGraph = g;
+                print_simple_graph(&graph)
+            },
+            Err(why) => println!("Error: {}", why),
+        };
+    }
+
+    #[test]
+    fn can_gfa2_to_handlegraph_error() {
+        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q8.gfa".to_string()){
+            Ok(g) => {
+                let graph: HashGraph = g;
+                print_simple_graph(&graph)
+            },
+            Err(why) => println!("Error: {}", why),
+        };
+
+        match gfa2_to_handlegraph("./tests/gfa2_files/GFA1_TEST.gfa".to_string()){
+            Ok(g) => {
+                let graph: HashGraph = g;
+                print_simple_graph(&graph)
+            },
+            Err(why) => println!("Error: {}", why),
+        };
     }
 
     #[test]
