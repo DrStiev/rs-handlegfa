@@ -22,19 +22,16 @@ ADD [NODE|LINK|PATH] (case insensitive)";
 
 const ADD_NODE_MESSAGE: &str = "To ADD a NODE into the graph, please type [NODEID] [SEQUENCE|*] where:\n\
 [NODEID] is the new id of the node\n\
-[SEQUENCE|*] is the new sequence of the node. The character \"*\" represent
-that the sequence it's not provided.\n\
+[SEQUENCE|*] is the new sequence of the node. The character \"*\" represent that the sequence it's not provided.\n\
 The 2 elements MUST BE separated by a SINGLE whitespace.\n";
 const ADD_LINK_MESSAGE: &str = "To ADD a LINK (or EDGE) into the graph, please type [FROM NODEID] [TO NODEID] where:\n\
 [FROM NODEID] is the id of the node where the link starts\n\
 [TO NODEID] is the id of the node where the link ends.\n\
 The 2 elements MUST BE separated by a SINGLE whitespace.\n";
 const ADD_PATH_MESSAGE: &str = "To ADD a PATH into the graph, please type [PATH_ID|*] [NODEID(+-)] where:\n\
-[PATH_ID|*] is the id of the new path, the character \"*\" represent
-that the id it's not provided \n\
+[PATH_ID|*] is the id of the new path, the character \"*\" represent that the id it's not provided \n\
 [NODEID(+-)] is the id of the node(s) with explicit orientation.\
-This section can contain 1 or more nodeids, every one of them must be \
-separated by a WHITESPACE.\n\
+This section can contain 1 or more nodeids, every one of them must be separated by a WHITESPACE.\n\
 The 2 elements MUST BE separated by a SINGLE whitespace.\n";
 
 /*
@@ -45,8 +42,7 @@ const REMOVE_MESSAGE: &str = "To REMOVE an element to the graph (or an operation
 REMOVE [NODE|LINK|PATH] (case insensitive)";
 */
 
-// TODO: add user control to perform the print of the graph when it is too big
-fn operation(mut graph: HashGraph, file: &str) {
+fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
     use std::io;
     println!("\n{}\n\n{}\n", TEXT_MESSAGE, STOP_MESSAGE);
     println!("{}\n", ADD_MESSAGE);
@@ -73,7 +69,7 @@ fn operation(mut graph: HashGraph, file: &str) {
                             let mut iter = operation.split_whitespace();
                             let id: u64 = iter.next().unwrap().parse::<u64>().unwrap();
                             let iter_ = iter.next().unwrap();
-                            let sequence: Option<&[u8]> = if iter_ == "*"{
+                            let sequence: Option<&[u8]> = if iter_ == "*" {
                                 None
                             } else {
                                 Some(iter_.as_bytes())
@@ -82,8 +78,12 @@ fn operation(mut graph: HashGraph, file: &str) {
                             match add_node(graph.clone(), id, sequence) {
                                 Ok(g) => {
                                     graph = g.clone();
-                                    println!();
-                                    print_simple_graph(&g)
+                                    if display_file {
+                                        println!();
+                                        print_simple_graph(&g);
+                                    } else { 
+                                        println!("The file it's too big to being displayed");
+                                    }
                                 },
                                 Err(why) => println!("Error: {}", why),
                             }
@@ -108,8 +108,12 @@ fn operation(mut graph: HashGraph, file: &str) {
                             match add_link_between_nodes(graph.clone(), id_from, id_to) {
                                 Ok(g) => {
                                     graph = g.clone();
-                                    println!();
-                                    print_simple_graph(&g)
+                                    if display_file {
+                                        println!();
+                                        print_simple_graph(&g);
+                                    } else { 
+                                        println!("The file it's too big to being displayed");
+                                    }
                                 },
                                 Err(why) => println!("Error: {}", why),
                             }
@@ -133,7 +137,7 @@ fn operation(mut graph: HashGraph, file: &str) {
                             let len: usize = iter.len();
                             let mut x: usize = 1;
 
-                            let path_id: Option<&[u8]> = if iter[0] == "*"{
+                            let path_id: Option<&[u8]> = if iter[0] == "*" {
                                 None
                             } else {
                                 Some(iter[0].as_bytes())
@@ -146,8 +150,12 @@ fn operation(mut graph: HashGraph, file: &str) {
                             match add_path(graph.clone(), path_id, ids) {
                                 Ok(g) => {
                                     graph = g.clone();
-                                    println!();
-                                    print_simple_graph(&g)
+                                    if display_file {
+                                        println!();
+                                        print_simple_graph(&g);
+                                    } else { 
+                                        println!("The file it's too big to being displayed");
+                                    }
                                 },
                                 Err(why) => println!("Error: {}", why),
                             }
@@ -158,6 +166,11 @@ fn operation(mut graph: HashGraph, file: &str) {
             _ => println!("No operation with the command: {}", input),
         }
     }
+    graph
+}
+
+fn save(graph: HashGraph, format: &str, file: &str) {
+    use std::io;
 
     println!("Do you want to save the changes?");
     let mut result = String::new();
@@ -170,22 +183,43 @@ fn operation(mut graph: HashGraph, file: &str) {
                 io::stdin().read_line(&mut path).expect("Failed to read input");
                 match path.trim() {
                     "*" => {
-                        match save_file(&graph, Some(String::from(file))){
-                            Ok(_) => println!("File saved!"),
-                            Err(why) => println!("Error: {}", why),
-                        };
+                        if format == "GFA1" {
+                            match save_as_gfa1_file(&graph, Some(String::from(file))){
+                                Ok(_) => println!("File saved!"),
+                                Err(why) => println!("Error: {}", why),
+                            };
+                        } else {
+                            match save_as_gfa2_file(&graph, Some(String::from(file))){
+                                Ok(_) => println!("File saved!"),
+                                Err(why) => println!("Error: {}", why),
+                            };
+                        }  
                     }
                     " " => {
-                        match save_file(&graph, None){
-                            Ok(_) => println!("File saved!"),
-                            Err(why) => println!("Error: {}", why),
-                        };
+                        if format == "GFA1" {
+                            match save_as_gfa1_file(&graph, None){
+                                Ok(_) => println!("File saved!"),
+                                Err(why) => println!("Error: {}", why),
+                            };
+                        } else {
+                            match save_as_gfa2_file(&graph, None){
+                                Ok(_) => println!("File saved!"),
+                                Err(why) => println!("Error: {}", why),
+                            };
+                        }
                     },
                     _ => {
-                        match save_file(&graph, Some(String::from(path.trim()))){
-                            Ok(_) => println!("File saved!"),
-                            Err(why) => println!("Error: {}", why),
-                        };
+                        if format == "GFA1" {
+                            match save_as_gfa1_file(&graph, Some(String::from(path.trim()))){
+                                Ok(_) => println!("File saved!"),
+                                Err(why) => println!("Error: {}", why),
+                            };
+                        } else {
+                            match save_as_gfa2_file(&graph, Some(String::from(path.trim()))){
+                                Ok(_) => println!("File saved!"),
+                                Err(why) => println!("Error: {}", why),
+                            };
+                        }
                     }
                 }
             }, 
@@ -195,23 +229,56 @@ fn operation(mut graph: HashGraph, file: &str) {
 }
 
 fn main() {
+    use std::fs;
+
     let matches = clap_app!(myapp =>
         (version: "1.0")
         (author: "Matteo Stievano <m.stievano1@campus.unimib.it>")
         (about: "This program allow the user to make various operation on a GFA2 file 
         using instead of a file representation a graph representation.")
         (@arg INPUT: +required "Sets the input file to use")
+        (@arg FORMAT: +required "Sets the the format for the input file to use")
     ).get_matches();
 
     let file = matches.value_of("INPUT").unwrap();
-    match gfa2_to_handlegraph(file.to_string()) {
-        Ok(g) => {
-            let graph: HashGraph = g;
-            println!();
-            print_simple_graph(&graph); 
-
-            operation(graph, file)
-        },
-        Err(why) => println!("Error: {}", why),
+    let display_file: bool = if fs::metadata(file.clone()).unwrap().len() < 10_000 {
+        true
+    } else {
+        false
     };
+    match matches.value_of("FORMAT").unwrap().to_string().to_uppercase().as_str(){
+        "GFA1" => {
+            match gfa1_to_handlegraph(file.to_string()) {
+                Ok(g) => {
+                    let mut graph: HashGraph = g;
+                    if display_file {
+                        println!();
+                        print_simple_graph(&graph); 
+                    } else { 
+                        println!("The file it's too big to being displayed");
+                    }
+                    graph = operation(graph, display_file);
+                    save(graph, "GFA1", file)
+                },
+                Err(why) => println!("Error: {}", why),
+            }
+        },
+        "GFA2" => {
+            match gfa2_to_handlegraph(file.to_string()) {
+                Ok(g) => {
+                    let mut graph: HashGraph = g;
+                    if display_file {
+                        println!();
+                        print_simple_graph(&graph); 
+                    } else { 
+                        println!("The file it's too big to being displayed");
+                    }
+                    graph = operation(graph, display_file);
+                    save(graph, "GFA2", file)
+                },
+                Err(why) => println!("Error: {}", why),
+            }
+        },
+        _ => println!("Error! Format not recognized!"),
+    };  
 }

@@ -1,7 +1,7 @@
 H	VN:Z:2.0	
-S	13	0	CTTGATT	
-S	12	0	CCTTGA	
-S	11	0	ACCTT	
+S	13	7	CTTGATT	
+S	12	6	CCTTGA	
+S	11	5	ACCTT	
 E	*	12+	13+	0	0$	0	0$	0M	
 E	*	11+	12+	0	0$	0	0$	0M	
 E	*	11+	13+	0	0$	0	0$	0M	

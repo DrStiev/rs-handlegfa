@@ -23,7 +23,25 @@ pub fn gfa2_to_handlegraph(path: String) -> Result<HashGraph, GraphOperationErro
         Ok(g) => g,
         Err(why) => return Err(GraphOperationError::FileError(why.to_string())),
     }; 
-    let graph: HashGraph = HashGraph::from_gfa(&gfa2);
+    let graph: HashGraph = HashGraph::from_gfa2(&gfa2);
+
+    Ok(graph)
+}
+
+/// Function that reads a ```GFA1``` files passed as input and return its
+/// corresponding ```HandleGraph```
+pub fn gfa1_to_handlegraph(path: String) -> Result<HashGraph, GraphOperationError> {
+    use gfa2::{
+        parser_gfa1::GFAParser,  
+        gfa1::GFA,
+    };
+
+    let parser: GFAParser<usize, ()> = GFAParser::new();
+    let gfa: GFA<usize, ()> = match parser.parse_file(&path) {
+        Ok(g) => g,
+        Err(why) => return Err(GraphOperationError::FileError(why.to_string())),
+    }; 
+    let graph: HashGraph = HashGraph::from_gfa(&gfa);
 
     Ok(graph)
 }
@@ -248,15 +266,17 @@ mod tests {
     use super::*;
 
     use gfa2::{
-        parser_gfa2::GFA2Parser,  
+        parser_gfa2::GFA2Parser,
+        parser_gfa1::GFAParser,  
         gfa2::GFA2,
+        gfa1::GFA,
     };
 
     #[test]
-    fn can_print_graph() {
+    fn can_print_graph_from_gfa2() {
         let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
         let gfa2: GFA2<usize, ()> = parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
-        let graph = HashGraph::from_gfa(&gfa2);
+        let graph = HashGraph::from_gfa2(&gfa2);
 
         print_simple_graph(&graph);
     }
@@ -271,6 +291,27 @@ mod tests {
             Err(why) => println!("Error: {}", why),
         };
     }
+
+    #[test]
+    fn can_print_graph_from_gfa1() {
+        let parser: GFAParser<usize, ()> = GFAParser::new();
+        let gfa: GFA<usize, ()> = parser.parse_file("./tests/gfa1_files/lil.gfa").unwrap();
+        let graph = HashGraph::from_gfa(&gfa);
+
+        print_simple_graph(&graph);
+    }
+
+    #[test]
+    fn can_gfa1_to_handlegraph() {
+        match gfa1_to_handlegraph("./tests/gfa1_files/lil.gfa".to_string()){
+            Ok(g) => {
+                let graph: HashGraph = g;
+                print_simple_graph(&graph)
+            },
+            Err(why) => println!("Error: {}", why),
+        };
+    }
+
 
     #[test]
     fn can_gfa2_to_handlegraph_error() {
@@ -295,21 +336,39 @@ mod tests {
     fn can_add_node() {
         let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
         let gfa2: GFA2<usize, ()> = parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
-        let graph = HashGraph::from_gfa(&gfa2);
+        let graph2 = HashGraph::from_gfa2(&gfa2);
 
-        match add_node(graph, 14 as u64, Some(b"TEST_NODE_1")) {
+        match add_node(graph2, 14 as u64, Some(b"TEST_NODE_1")) {
+            Ok(g) => print_simple_graph(&g),
+            Err(why) => println!("Error: {}", why),
+        };
+
+        let parser: GFAParser<usize, ()> = GFAParser::new();
+        let gfa1: GFA<usize, ()> = parser.parse_file("./tests/gfa1_files/lil.gfa").unwrap();
+        let graph1 = HashGraph::from_gfa(&gfa1);
+
+        match add_node(graph1, 20 as u64, Some(b"TEST_NODE_1")) {
             Ok(g) => print_simple_graph(&g),
             Err(why) => println!("Error: {}", why),
         };
     }
 
     #[test]
-    fn can_add_node_error() {
+    fn error_can_add_node() {
         let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
         let gfa2: GFA2<usize, ()> = parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
-        let graph = HashGraph::from_gfa(&gfa2);
+        let graph = HashGraph::from_gfa2(&gfa2);
 
         match add_node(graph, 12 as u64, Some(b"TEST_NODE_1")) {
+            Ok(g) => print_simple_graph(&g),
+            Err(why) => println!("Error: {}", why),
+        };
+
+        let parser: GFAParser<usize, ()> = GFAParser::new();
+        let gfa1: GFA<usize, ()> = parser.parse_file("./tests/gfa1_files/lil.gfa").unwrap();
+        let graph1 = HashGraph::from_gfa(&gfa1);
+
+        match add_node(graph1, 5 as u64, Some(b"TEST_NODE_1")) {
             Ok(g) => print_simple_graph(&g),
             Err(why) => println!("Error: {}", why),
         };
@@ -319,7 +378,7 @@ mod tests {
     fn can_add_link() {
         let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
         let gfa2: GFA2<usize, ()> = parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
-        let mut graph = HashGraph::from_gfa(&gfa2);
+        let mut graph = HashGraph::from_gfa2(&gfa2);
 
         graph = add_node(graph, 14 as u64, Some(b"TEST_NODE_1")).unwrap();
         graph = add_node(graph, 15 as u64, Some(b"TEST_NODE_2")).unwrap();
@@ -328,13 +387,25 @@ mod tests {
             Ok(g) => print_simple_graph(&g),
             Err(why) => println!("Error: {}", why),
         };
+
+        let parser: GFAParser<usize, ()> = GFAParser::new();
+        let gfa: GFA<usize, ()> = parser.parse_file("./tests/gfa1_files/lil.gfa").unwrap();
+        let mut graph1 = HashGraph::from_gfa(&gfa);
+
+        graph1 = add_node(graph1, 20 as u64, Some(b"TEST_NODE_1")).unwrap();
+        graph1 = add_node(graph1, 21 as u64, Some(b"TEST_NODE_2")).unwrap();
+
+        match add_link_between_nodes(graph1, 20 as u64, 21 as u64) {
+            Ok(g) => print_simple_graph(&g),
+            Err(why) => println!("Error: {}", why),
+        };
     }
 
     #[test]
-    fn can_add_link_error() {
+    fn error_can_add_link() {
         let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
         let gfa2: GFA2<usize, ()> = parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
-        let mut graph = HashGraph::from_gfa(&gfa2);
+        let mut graph = HashGraph::from_gfa2(&gfa2);
 
         graph = add_node(graph, 14 as u64, Some(b"TEST_NODE_1")).unwrap();
         graph = add_node(graph, 15 as u64, Some(b"TEST_NODE_2")).unwrap();
@@ -353,13 +424,35 @@ mod tests {
             Ok(g) => print_simple_graph(&g),
             Err(why) => println!("Error: {}", why),
         };
+
+        let parser: GFAParser<usize, ()> = GFAParser::new();
+        let gfa: GFA<usize, ()> = parser.parse_file("./tests/gfa1_files/lil.gfa").unwrap();
+        let mut graph1 = HashGraph::from_gfa(&gfa);
+
+        graph1 = add_node(graph1, 20 as u64, Some(b"TEST_NODE_1")).unwrap();
+        graph1 = add_node(graph1, 21 as u64, Some(b"TEST_NODE_2")).unwrap();
+
+        match add_link_between_nodes(graph1.clone(), 50 as u64, 51 as u64) {
+            Ok(g) => print_simple_graph(&g),
+            Err(why) => println!("Error: {}", why),
+        };
+
+        match add_link_between_nodes(graph1.clone(), 51 as u64, 21 as u64) {
+            Ok(g) => print_simple_graph(&g),
+            Err(why) => println!("Error: {}", why),
+        };
+
+        match add_link_between_nodes(graph1.clone(), 20 as u64, 50 as u64) {
+            Ok(g) => print_simple_graph(&g),
+            Err(why) => println!("Error: {}", why),
+        };
     }
 
     #[test]
     fn can_add_path() {
         let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
         let gfa2: GFA2<usize, ()> = parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
-        let graph = HashGraph::from_gfa(&gfa2);
+        let graph = HashGraph::from_gfa2(&gfa2);
         let ids: Vec<&[u8]> = vec![b"11+", b"13+"];
 
         match add_path(graph, Some(b"TEST_PATH_1"), ids) {
@@ -372,16 +465,48 @@ mod tests {
             }, 
             Err(why) => println!("Error: {}", why),
         };
+
+        let parser: GFAParser<usize, ()> = GFAParser::new();
+        let gfa: GFA<usize, ()> = parser.parse_file("./tests/gfa1_files/lil.gfa").unwrap();
+        let graph1 = HashGraph::from_gfa(&gfa);
+        let ids: Vec<&[u8]> = vec![b"11+", b"13+"];
+
+        match add_path(graph1, Some(b"TEST_PATH_1"), ids) {
+            Ok(g) => {
+                let mut x = 0;
+                while !g.get_path(&x).is_none() {
+                    g.print_path(&x);
+                    x += 1;
+                }
+            }, 
+            Err(why) => println!("Error: {}", why),
+        };
     }
 
     #[test]
-    fn can_add_path_error() {
+    fn error_can_add_path() {
         let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
         let gfa2: GFA2<usize, ()> = parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
-        let graph = HashGraph::from_gfa(&gfa2);
+        let graph = HashGraph::from_gfa2(&gfa2);
         let ids: Vec<&[u8]> = vec![b"11+", b"13"];
 
         match add_path(graph, Some(b"TEST_PATH_1"), ids) {
+            Ok(g) => {
+                let mut x = 0;
+                while !g.get_path(&x).is_none() {
+                    g.print_path(&x);
+                    x += 1;
+                }
+            }, 
+            Err(why) => println!("Error: {}", why),
+        };
+
+        let parser: GFAParser<usize, ()> = GFAParser::new();
+        let gfa: GFA<usize, ()> = parser.parse_file("./tests/gfa1_files/lil.gfa").unwrap();
+        let graph1 = HashGraph::from_gfa(&gfa);
+        let ids: Vec<&[u8]> = vec![b"11", b"13+"];
+
+        match add_path(graph1, Some(b"TEST_PATH_1"), ids) {
             Ok(g) => {
                 let mut x = 0;
                 while !g.get_path(&x).is_none() {
