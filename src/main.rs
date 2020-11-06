@@ -10,23 +10,23 @@ use handlegraph2::hashgraph::HashGraph;
 
 const TEXT_MESSAGE: &str = "The possible operation on a graph are:\n\
 1. Add Node(s), Link(s) [or Edge(s)] and Path(s)\n\
-2. Modify the value of Node(s), Link(s) [or Edge(s)] and Path(s)\n\
-3. Remove Node(s), Link(s) [or Edge(s)] and Path(s)\n\
-For now only the first operations are available!"; 
+2. Remove Node(s), Link(s) [or Edge(s)] and Path(s)\n\
+3. Modify the value of Node(s), Link(s) [or Edge(s)] and Path(s)\n\
+For now only the first and second operations are available!\n"; 
 
 const STOP_MESSAGE: &str = "To STOP modifying the graph, \
-or STOP perform a certain operation type [STOP]";
+or STOP perform a certain operation type [STOP]\n";
 
-const ADD_MESSAGE: &str = "To ADD an element to the graph (or an operation) type: 
-ADD [NODE|LINK|PATH] (case insensitive)";
+const ADD_MESSAGE: &str = "To ADD an element to the graph type: 
+ADD [NODE|LINK|PATH] (case insensitive)\n";
 
 const ADD_NODE_MESSAGE: &str = "To ADD a NODE into the graph, please type [NODEID] [SEQUENCE|*] where:\n\
-[NODEID] is the new id of the node\n\
+[NODEID] is the new id of the node (always a number, otherwise an error will be raised)\n\
 [SEQUENCE|*] is the new sequence of the node. The character \"*\" represent that the sequence it's not provided.\n\
 The 2 elements MUST BE separated by a SINGLE whitespace.\n";
 const ADD_LINK_MESSAGE: &str = "To ADD a LINK (or EDGE) into the graph, please type [FROM NODEID] [TO NODEID] where:\n\
-[FROM NODEID] is the id of the node where the link starts\n\
-[TO NODEID] is the id of the node where the link ends.\n\
+[FROM NODEID] is the id of the node where the link starts (always a number, otherwise an error will be raised)\n\
+[TO NODEID] is the id of the node where the link ends (always a number, otherwise an error will be raised).\n\
 The 2 elements MUST BE separated by a SINGLE whitespace.\n";
 const ADD_PATH_MESSAGE: &str = "To ADD a PATH into the graph, please type [PATH_ID|*] [NODEID(+-)] where:\n\
 [PATH_ID|*] is the id of the new path, the character \"*\" represent that the id it's not provided \n\
@@ -34,20 +34,29 @@ const ADD_PATH_MESSAGE: &str = "To ADD a PATH into the graph, please type [PATH_
 This section can contain 1 or more nodeids, every one of them must be separated by a WHITESPACE.\n\
 The 2 elements MUST BE separated by a SINGLE whitespace.\n";
 
-/*
-const MODIFY_MESSAGE: &str = "To MODIFY an element to the graph (or an operation) type: 
-MODIFY [NODE|LINK|PATH] (case insensitive)";
+const REMOVE_MESSAGE: &str = "To REMOVE an element to the graph type: 
+REMOVE [NODE|LINK|PATH] (case insensitive)\n";
 
-const REMOVE_MESSAGE: &str = "To REMOVE an element to the graph (or an operation) type: 
-REMOVE [NODE|LINK|PATH] (case insensitive)";
+const REMOVE_NODE_MESSAGE: &str = "To REMOVE a NODE of the graph, please type [NODEID] where:\n\
+[NODEID] is the new id of the node (always a number, otherwise an error will be raised)\n";
+const REMOVE_LINK_MESSAGE: &str = "To REMOVE a LINK (or EDGE) of the graph, please type [FROM NODEID] [TO NODEID] where:\n\
+[FROM NODEID] is the id of the node where the link starts (always a number, otherwise an error will be raised)\n\
+[TO NODEID] is the id of the node where the link ends (always a number, otherwise an error will be raised).\n\
+The 2 elements MUST BE separated by a SINGLE whitespace.\n";
+const REMOVE_PATH_MESSAGE: &str = "To REMOVE a PATH of the graph, please type [PATH_NAME|*] where:\n\
+[PATH_NAME|*] is the id of the new path, the character \"*\" represent that the id it's not provided \n";
+
+/*
+const MODIFY_MESSAGE: &str = "To MODIFY an element to the graph type: 
+MODIFY [NODE|LINK|PATH] (case insensitive)\n";
 */
 
 fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
     use std::io;
-    println!("\n{}\n\n{}\n", TEXT_MESSAGE, STOP_MESSAGE);
-    println!("{}\n", ADD_MESSAGE);
+    println!("\n{}\n{}", TEXT_MESSAGE, STOP_MESSAGE);
+    println!("{}", ADD_MESSAGE);
+    println!("{}", REMOVE_MESSAGE);
     // println!("{}", MODIFY_MESSAGE);
-    // println!("{}", REMOVE_MESSAGE);
 
     let mut stop: bool = false;
     while !stop {
@@ -57,7 +66,6 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
         match input.to_uppercase().as_str().trim() {
             "STOP" => stop = true,
             "ADD NODE" => {
-                // TODO: add control for empty or blank id
                 println!("\n{}", ADD_NODE_MESSAGE);
                 let mut stop_: bool = false;
                 while !stop_ {
@@ -67,7 +75,12 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                         "STOP" => stop_ = true,
                         _ => {
                             let mut iter = operation.split_whitespace();
-                            let id: u64 = iter.next().unwrap().parse::<u64>().unwrap();
+                            let id = iter.next();
+                            let id: u64 = if !id.is_none() {
+                                id.unwrap().parse::<u64>().expect("Failed to parse Segment Id")
+                            } else {
+                                panic!("ID cannot be empty!")
+                            };
                             let iter_ = iter.next().unwrap();
                             let sequence: Option<&[u8]> = if iter_ == "*" {
                                 None
@@ -92,7 +105,6 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                 }
             },
             "ADD LINK" => {
-                // TODO: add control for empty or blank id
                 println!("\n{}", ADD_LINK_MESSAGE);
                 let mut stop_: bool = false;
                 while !stop_ {
@@ -102,8 +114,20 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                         "STOP" => stop_ = true,
                         _ => {
                             let mut iter = operation.split_whitespace();
-                            let id_from: u64 = iter.next().unwrap().parse::<u64>().unwrap();
-                            let id_to: u64 = iter.next().unwrap().parse::<u64>().unwrap();
+
+                            let id_from = iter.next();
+                            let id_from: u64 = if !id_from.is_none() {
+                                id_from.unwrap().parse::<u64>().expect("Failed to parse From Segment Id")
+                            } else {
+                                panic!("ID cannot be empty!")
+                            };
+
+                            let id_to = iter.next();
+                            let id_to: u64 = if !id_to.is_none() {
+                                id_to.unwrap().parse::<u64>().expect("Failed to parse To Segment Id")
+                            } else {
+                                panic!("ID cannot be empty!")
+                            };
 
                             match add_link_between_nodes(graph.clone(), id_from, id_to) {
                                 Ok(g) => {
@@ -148,6 +172,112 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                             }
 
                             match add_path(graph.clone(), path_id, ids) {
+                                Ok(g) => {
+                                    graph = g.clone();
+                                    if display_file {
+                                        println!();
+                                        print_simple_graph(&g);
+                                    } else { 
+                                        println!("The file it's too big to being displayed");
+                                    }
+                                },
+                                Err(why) => println!("Error: {}", why),
+                            }
+                        }
+                    }
+                }
+            },
+            "REMOVE NODE" => {
+                println!("\n{}", REMOVE_NODE_MESSAGE);
+                let mut stop_: bool = false;
+                while !stop_ {
+                    let mut operation = String::new();
+                    io::stdin().read_line(&mut operation).expect("Failed to read input");
+                    match operation.to_uppercase().as_str().trim() {
+                        "STOP" => stop_ = true,
+                        _ => {
+                            let mut iter = operation.split_whitespace();
+                            let id = iter.next();
+                            let id: u64 = if !id.is_none() {
+                                id.unwrap().parse::<u64>().expect("Failed to parse Segment Id")
+                            } else {
+                                panic!("ID cannot be empty!")
+                            };                            
+                            match remove_node(graph.clone(), id) {
+                                Ok(g) => {
+                                    graph = g.clone();
+                                    if display_file {
+                                        println!();
+                                        print_simple_graph(&g);
+                                    } else { 
+                                        println!("The file it's too big to being displayed");
+                                    }
+                                },
+                                Err(why) => println!("Error: {}", why),
+                            }
+                        }
+                    }
+                }
+            },
+            "REMOVE LINK" => {
+                println!("\n{}", REMOVE_LINK_MESSAGE);
+                let mut stop_: bool = false;
+                while !stop_ {
+                    let mut operation = String::new();
+                    io::stdin().read_line(&mut operation).expect("Failed to read input");
+                    match operation.to_uppercase().as_str().trim() {
+                        "STOP" => stop_ = true,
+                        _ => {
+                            let mut iter = operation.split_whitespace();
+
+                            let id_from = iter.next();
+                            let id_from: u64 = if !id_from.is_none() {
+                                id_from.unwrap().parse::<u64>().expect("Failed to parse From Segment Id")
+                            } else {
+                                panic!("ID cannot be empty!")
+                            };
+                            
+                            let id_to = iter.next();
+                            let id_to: u64 = if !id_to.is_none() {
+                                id_to.unwrap().parse::<u64>().expect("Failed to parse To Segment Id")
+                            } else {
+                                panic!("ID cannot be empty!")
+                            };
+
+                            match remove_link(graph.clone(), id_from, id_to) {
+                                Ok(g) => {
+                                    graph = g.clone();
+                                    if display_file {
+                                        println!();
+                                        print_simple_graph(&g);
+                                    } else { 
+                                        println!("The file it's too big to being displayed");
+                                    }
+                                },
+                                Err(why) => println!("Error: {}", why),
+                            }
+                        }
+                    }
+                }
+            },
+            "REMOVE PATH" => {
+                // TODO: add control for empty or blank id
+                println!("\n{}", REMOVE_PATH_MESSAGE);
+                let mut stop_: bool = false;
+                while !stop_ {
+                    let mut operation = String::new();
+                    io::stdin().read_line(&mut operation).expect("Failed to read input");
+                    match operation.to_uppercase().as_str().trim() {
+                        "STOP" => stop_ = true,
+                        _ => {
+                            let iter: Vec<&str> = operation.split_whitespace().collect();
+                            let path_id: Option<&[u8]> = if iter[0] == "*" {
+                                None
+                            } else {
+                                Some(iter[0].as_bytes())
+                            };
+                            
+                            match remove_path(graph.clone(), path_id) {
                                 Ok(g) => {
                                     graph = g.clone();
                                     if display_file {
