@@ -11,8 +11,7 @@ use handlegraph2::hashgraph::HashGraph;
 const TEXT_MESSAGE: &str = "The possible operation on a graph are:\n\
 1. Add Node(s), Link(s) [or Edge(s)] and Path(s)\n\
 2. Remove Node(s), Link(s) [or Edge(s)] and Path(s)\n\
-3. Modify the value of Node(s), Link(s) [or Edge(s)] and Path(s)\n\
-For now only the first and second operations are available!\n"; 
+3. Modify the value of Node(s), Link(s) [or Edge(s)] and Path(s)\n"; 
 
 const STOP_MESSAGE: &str = "To STOP modifying the graph, \
 or STOP perform a certain operation type [STOP]\n";
@@ -46,17 +45,36 @@ The 2 elements MUST BE separated by a SINGLE whitespace.\n";
 const REMOVE_PATH_MESSAGE: &str = "To REMOVE a PATH of the graph, please type [PATH_NAME|*] where:\n\
 [PATH_NAME|*] is the id of the new path, the character \"*\" represent that the id it's not provided \n";
 
-/*
+
 const MODIFY_MESSAGE: &str = "To MODIFY an element to the graph type: 
 MODIFY [NODE|LINK|PATH] (case insensitive)\n";
-*/
+
+const MODIFY_NODE_MESSAGE: &str = "To ADD a NODE into the graph, please type [NODEID] [SEQUENCE|*] where:\n\
+[NODEID] is the new id of the node (always a number, otherwise an error will be raised)\n\
+[SEQUENCE] is the new sequence of the node.\n\
+The 2 elements MUST BE separated by a SINGLE whitespace.\n";
+const MODIFY_LINK_MESSAGE: &str = "To ADD a LINK (or EDGE) into the graph, please type [FROM NODEID] [TO NODEID] where:\n\
+[FROM NODEID] is the id of the node where the link starts (always a number, otherwise an error will be raised)\n\
+[TO NODEID] is the id of the node where the link ends (always a number, otherwise an error will be raised).\n\
+[NEW FROM NODEID|*] is the id of the new starting node (always a number, otherwise an error will be raised).\n\
+The character \"*\" represent that the sequence it's not provided.\n\
+[+-] is the orientation of the new starting node.\n\
+[NEW TO NODEID|*] is the id of the ending node (always a number, otherwise an error will be raised).\n\
+[+-] is the orientation of the new ending node.\n\
+The 4 elements MUST BE separated by a SINGLE whitespace.\n";
+const MODIFY_PATH_MESSAGE: &str = "To ADD a PATH into the graph, please type [PATH_ID|*] [NODEID(+-)] where:\n\
+[PATH_ID] is the id of the new path\n\
+[NODEID(+-)] is the id of the node(s) with explicit orientation.\
+This section can contain 1 or more nodeids, every one of them must be separated by a WHITESPACE.\n\
+The 2 elements MUST BE separated by a SINGLE whitespace.\n";
+
 
 fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
     use std::io;
     println!("\n{}\n{}", TEXT_MESSAGE, STOP_MESSAGE);
     println!("{}", ADD_MESSAGE);
     println!("{}", REMOVE_MESSAGE);
-    // println!("{}", MODIFY_MESSAGE);
+    println!("{}", MODIFY_MESSAGE);
 
     let mut stop: bool = false;
     while !stop {
@@ -288,6 +306,142 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                                     }
                                 },
                                 Err(why) => println!("Error: {}", why),
+                            }
+                        }
+                    }
+                }
+            },
+            "MODIFY NODE" => {
+                println!("\n{}", MODIFY_NODE_MESSAGE);
+                let mut stop_: bool = false;
+                while !stop_ {
+                    let mut operation = String::new();
+                    io::stdin().read_line(&mut operation).expect("Failed to read input");
+                    match operation.to_uppercase().as_str().trim() {
+                        "STOP" => stop_ = true,
+                        _ => {
+                            let mut iter = operation.split_whitespace();
+                            let id = iter.next();
+                            let id: u64 = if !id.is_none() {
+                                id.unwrap().parse::<u64>().expect("Failed to parse Segment Id")
+                            } else {
+                                panic!("ID cannot be empty!")
+                            };
+                            let sequence: &[u8] = iter.next().unwrap().as_bytes();
+                
+                            match modify_node(graph.clone(), id, sequence) {
+                                Ok(g) => {
+                                    graph = g.clone();
+                                    if display_file {
+                                        println!();
+                                        print_simple_graph(&g);
+                                    } else { 
+                                        println!("The file it's too big to being displayed");
+                                    }
+                                },
+                                Err(why) => println!("Error: {}", why),
+                            }
+                        }
+                    }
+                }
+            },
+            "MODIFY LINK" => {
+                println!("\n{}", MODIFY_LINK_MESSAGE);
+                let mut stop_: bool = false;
+                while !stop_ {
+                    let mut operation = String::new();
+                    io::stdin().read_line(&mut operation).expect("Failed to read input");
+                    match operation.to_uppercase().as_str().trim() {
+                        "STOP" => stop_ = true,
+                        _ => {
+                            let mut iter = operation.split_whitespace();
+
+                            let id_from = iter.next();
+                            let id_from: u64 = if !id_from.is_none() {
+                                id_from.unwrap().parse::<u64>().expect("Failed to parse From Segment Id")
+                            } else {
+                                panic!("ID cannot be empty!")
+                            };
+                            let id_to = iter.next();
+                            let id_to: u64 = if !id_to.is_none() {
+                                id_to.unwrap().parse::<u64>().expect("Failed to parse To Segment Id")
+                            } else {
+                                panic!("ID cannot be empty!")
+                            };
+
+                            let new_id_from = iter.next();
+                            let new_id_from: u64 = if !new_id_from.is_none() {
+                                new_id_from.unwrap().parse::<u64>().expect("Failed to parse From Segment Id")
+                            } else {
+                                panic!("ID cannot be empty!")
+                            };
+                            let from_orient = iter.next().unwrap().to_string();
+
+                            let new_id_to = iter.next();
+                            let new_id_to: u64 = if !new_id_to.is_none() {
+                                new_id_to.unwrap().parse::<u64>().expect("Failed to parse To Segment Id")
+                            } else {
+                                panic!("ID cannot be empty!")
+                            };
+                            let to_orient = iter.next().unwrap().to_string();
+
+                            match modify_link(
+                                graph.clone(), 
+                                id_from, id_to, 
+                                Some(new_id_from), 
+                                Some(from_orient), 
+                                Some(new_id_to), 
+                                Some(to_orient)) {
+                                Ok(g) => {
+                                    graph = g.clone();
+                                    if display_file {
+                                        println!();
+                                        print_simple_graph(&g);
+                                    } else { 
+                                        println!("The file it's too big to being displayed");
+                                    }
+                                },
+                                Err(why) => println!("Error: {}", why),
+                            }
+                        }
+                    }
+                }
+            },
+            "MODIFY PATH" => {
+                // TODO: add control for empty or blank id
+                println!("\n{}", MODIFY_PATH_MESSAGE);
+                let mut stop_: bool = false;
+                while !stop_ {
+                    let mut operation = String::new();
+                    io::stdin().read_line(&mut operation).expect("Failed to read input");
+                    match operation.to_uppercase().as_str().trim() {
+                        "STOP" => stop_ = true,
+                        _ => {
+                            let iter: Vec<&str> = operation.split_whitespace().collect();
+                            let mut ids: Vec<&[u8]> = vec![];
+
+                            let len: usize = iter.len();
+                            let mut x: usize = 1;
+
+                            let path_id: &[u8] = iter[0].as_bytes(); {
+                            
+                                while x < len {
+                                    ids.push(iter[x].as_bytes());
+                                    x += 1;
+                                }
+
+                                match modify_path(graph.clone(), path_id, ids) {
+                                    Ok(g) => {
+                                        graph = g.clone();
+                                        if display_file {
+                                            println!();
+                                            print_simple_graph(&g);
+                                        } else { 
+                                            println!("The file it's too big to being displayed");
+                                        }
+                                    },
+                                    Err(why) => println!("Error: {}", why),
+                                }
                             }
                         }
                     }
