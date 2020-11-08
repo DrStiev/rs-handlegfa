@@ -12,17 +12,13 @@ pub use self::error::*;
 
 /// Function that reads a ```GFA2``` files passed as input and return its
 /// corresponding ```HandleGraph```
-pub fn gfa2_to_handlegraph(
-    path: String,
-) -> Result<HashGraph, GraphOperationError> {
+pub fn gfa2_to_handlegraph(path: String) -> Result<HashGraph, GraphOperationError> {
     use gfa2::{gfa2::GFA2, parser_gfa2::GFA2Parser};
 
     let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
     let gfa2: GFA2<usize, ()> = match parser.parse_file(&path) {
         Ok(g) => g,
-        Err(why) => {
-            return Err(GraphOperationError::FileError(why.to_string()))
-        }
+        Err(why) => return Err(GraphOperationError::FileError(why.to_string())),
     };
     let graph: HashGraph = HashGraph::from_gfa2(&gfa2);
 
@@ -31,17 +27,13 @@ pub fn gfa2_to_handlegraph(
 
 /// Function that reads a ```GFA1``` files passed as input and return its
 /// corresponding ```HandleGraph```
-pub fn gfa1_to_handlegraph(
-    path: String,
-) -> Result<HashGraph, GraphOperationError> {
+pub fn gfa1_to_handlegraph(path: String) -> Result<HashGraph, GraphOperationError> {
     use gfa2::{gfa1::GFA, parser_gfa1::GFAParser};
 
     let parser: GFAParser<usize, ()> = GFAParser::new();
     let gfa: GFA<usize, ()> = match parser.parse_file(&path) {
         Ok(g) => g,
-        Err(why) => {
-            return Err(GraphOperationError::FileError(why.to_string()))
-        }
+        Err(why) => return Err(GraphOperationError::FileError(why.to_string())),
     };
     let graph: HashGraph = HashGraph::from_gfa(&gfa);
 
@@ -67,9 +59,7 @@ pub fn add_node<T: Into<NodeId>>(
     for handle in graph.all_handles() {
         let old_seq_id = handle.id();
         if old_seq_id == nodeid_temp {
-            return Err(GraphOperationError::IdAlreadyExist(
-                nodeid_temp.to_string(),
-            ));
+            return Err(GraphOperationError::IdAlreadyExist(nodeid_temp.to_string()));
         }
     }
 
@@ -313,8 +303,7 @@ pub fn remove_path(
         Ok(graph)
     } else {
         Err(GraphOperationError::PathNotExist(
-            String::from_utf8(path_name.to_vec())
-                .expect("Invalid UTF-8 character"),
+            String::from_utf8(path_name.to_vec()).expect("Invalid UTF-8 character"),
         ))
     }
 }
@@ -363,33 +352,24 @@ pub fn modify_link<T: Into<NodeId>>(
 ) -> Result<HashGraph, GraphOperationError> {
     use gfa2::gfa2::orientation::Orientation;
 
-    // get the orientation and handle pretty much all the cases
-    let new_from_node_orientation = if new_from_node_orientation.is_none() {
-        Orientation::default()
-    } else if new_from_node_orientation.clone().unwrap() == "-" {
-        Orientation::Backward
-    } else if new_from_node_orientation.unwrap() == "+" {
-        Orientation::Forward
-    } else {
-        Orientation::default()
-    };
-    // get the orientation and handle pretty much all the cases
-    let new_to_node_orientation = if new_to_node_orientation.is_none() {
-        Orientation::default()
-    } else if new_to_node_orientation.clone().unwrap() == "-" {
-        Orientation::Backward
-    } else if new_to_node_orientation.unwrap() == "+" {
-        Orientation::Forward
-    } else {
-        Orientation::default()
-    };
-
     let orient = |rev: bool| {
         if rev {
             Orientation::Backward
         } else {
             Orientation::Forward
         }
+    };
+
+    let new_from_node_orientation = match new_from_node_orientation.unwrap().as_str() {
+        "+" => Orientation::Forward,
+        "-" => Orientation::Backward,
+        _ => Orientation::default(),
+    };
+
+    let new_to_node_orientation = match new_to_node_orientation.unwrap().as_str() {
+        "+" => Orientation::Forward,
+        "-" => Orientation::Backward,
+        _ => Orientation::default(),
     };
 
     let mut find_left: bool = false;
@@ -402,21 +382,19 @@ pub fn modify_link<T: Into<NodeId>>(
     let to_node: NodeId = to_node.into();
 
     // get and wrap in option the 2 possible new handles
-    let new_left_handle: Option<Handle> = if new_from_node.is_some() {
-        Some(Handle::new(
+    let new_left_handle: Option<Handle> = match new_from_node {
+        Some(_) => Some(Handle::new(
             new_from_node.unwrap().into(),
             new_from_node_orientation,
-        ))
-    } else {
-        None
+        )),
+        None => None,
     };
-    let new_right_handle: Option<Handle> = if new_to_node.is_some() {
-        Some(Handle::new(
+    let new_right_handle: Option<Handle> = match new_to_node {
+        Some(_) => Some(Handle::new(
             new_to_node.unwrap().into(),
             new_to_node_orientation,
-        ))
-    } else {
-        None
+        )),
+        None => None,
     };
 
     // check if the segmentId associated to from_node and to_node exists
@@ -495,8 +473,7 @@ pub fn modify_path(
         Ok(graph)
     } else {
         Err(GraphOperationError::PathNotExist(
-            String::from_utf8(path_name.to_vec())
-                .expect("Invalid UTF-8 character"),
+            String::from_utf8(path_name.to_vec()).expect("Invalid UTF-8 character"),
         ))
     }
 }
@@ -573,8 +550,7 @@ mod tests {
 
     #[test]
     fn can_modify_node() {
-        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa".to_string())
-        {
+        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa".to_string()) {
             Ok(g) => {
                 let graph: HashGraph = g;
                 match modify_node(graph, 11 as u64, b"NEW_TEST_SEQUENCE") {
@@ -588,8 +564,7 @@ mod tests {
 
     #[test]
     fn can_modify_edge() {
-        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa".to_string())
-        {
+        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa".to_string()) {
             Ok(g) => {
                 let graph: HashGraph = g;
                 print_simple_graph(&graph);
@@ -612,8 +587,7 @@ mod tests {
 
     #[test]
     fn can_modify_path() {
-        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa".to_string())
-        {
+        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa".to_string()) {
             Ok(g) => {
                 let graph: HashGraph = g;
                 //let smaller path = "11+ 12-";
@@ -628,8 +602,7 @@ mod tests {
 
     #[test]
     fn can_remove_node() {
-        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa".to_string())
-        {
+        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa".to_string()) {
             Ok(g) => {
                 let graph: HashGraph = g;
                 match remove_node(graph, 11 as u64) {
@@ -643,8 +616,7 @@ mod tests {
 
     #[test]
     fn can_remove_edge() {
-        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa".to_string())
-        {
+        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa".to_string()) {
             Ok(g) => {
                 let graph: HashGraph = g;
                 match remove_link(graph, 11 as u64, 13 as u64) {
@@ -660,8 +632,7 @@ mod tests {
     fn can_remove_path() {
         use bstr::BString;
 
-        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa".to_string())
-        {
+        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa".to_string()) {
             Ok(g) => {
                 let graph: HashGraph = g;
                 match remove_path(graph, Some(&BString::from("14"))) {
@@ -676,8 +647,7 @@ mod tests {
     #[test]
     fn can_print_graph() {
         let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
-        let gfa2: GFA2<usize, ()> =
-            parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
+        let gfa2: GFA2<usize, ()> = parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
         let graph = HashGraph::from_gfa2(&gfa2);
 
         print_simple_graph(&graph);
@@ -685,8 +655,7 @@ mod tests {
 
     #[test]
     fn can_convert_file_to_handlegraph() {
-        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa".to_string())
-        {
+        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa".to_string()) {
             Ok(g) => {
                 let graph: HashGraph = g;
                 print_simple_graph(&graph)
@@ -697,8 +666,7 @@ mod tests {
 
     #[test]
     fn can_convert_file_to_handlegraph_error() {
-        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q8.gfa".to_string())
-        {
+        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q8.gfa".to_string()) {
             Ok(g) => {
                 let graph: HashGraph = g;
                 print_simple_graph(&graph)
@@ -706,9 +674,7 @@ mod tests {
             Err(why) => println!("Error: {}", why),
         };
 
-        match gfa2_to_handlegraph(
-            "./tests/gfa2_files/GFA1_TEST.gfa".to_string(),
-        ) {
+        match gfa2_to_handlegraph("./tests/gfa2_files/GFA1_TEST.gfa".to_string()) {
             Ok(g) => {
                 let graph: HashGraph = g;
                 print_simple_graph(&graph)
@@ -720,8 +686,7 @@ mod tests {
     #[test]
     fn can_add_node() {
         let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
-        let gfa2: GFA2<usize, ()> =
-            parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
+        let gfa2: GFA2<usize, ()> = parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
         let graph2 = HashGraph::from_gfa2(&gfa2);
 
         match add_node(graph2, 14 as u64, Some(b"TEST_NODE_1")) {
@@ -733,8 +698,7 @@ mod tests {
     #[test]
     fn error_can_add_node() {
         let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
-        let gfa2: GFA2<usize, ()> =
-            parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
+        let gfa2: GFA2<usize, ()> = parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
         let graph = HashGraph::from_gfa2(&gfa2);
 
         match add_node(graph, 12 as u64, Some(b"TEST_NODE_1")) {
@@ -746,8 +710,7 @@ mod tests {
     #[test]
     fn can_add_link() {
         let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
-        let gfa2: GFA2<usize, ()> =
-            parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
+        let gfa2: GFA2<usize, ()> = parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
         let mut graph = HashGraph::from_gfa2(&gfa2);
 
         graph = add_node(graph, 14 as u64, Some(b"TEST_NODE_1")).unwrap();
@@ -762,8 +725,7 @@ mod tests {
     #[test]
     fn error_can_add_link() {
         let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
-        let gfa2: GFA2<usize, ()> =
-            parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
+        let gfa2: GFA2<usize, ()> = parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
         let mut graph = HashGraph::from_gfa2(&gfa2);
 
         graph = add_node(graph, 14 as u64, Some(b"TEST_NODE_1")).unwrap();
@@ -788,8 +750,7 @@ mod tests {
     #[test]
     fn can_add_path() {
         let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
-        let gfa2: GFA2<usize, ()> =
-            parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
+        let gfa2: GFA2<usize, ()> = parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
         let graph = HashGraph::from_gfa2(&gfa2);
         let ids: Vec<&[u8]> = vec![b"11+", b"13+"];
 
@@ -808,8 +769,7 @@ mod tests {
     #[test]
     fn error_can_add_path() {
         let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
-        let gfa2: GFA2<usize, ()> =
-            parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
+        let gfa2: GFA2<usize, ()> = parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
         let graph = HashGraph::from_gfa2(&gfa2);
         let ids: Vec<&[u8]> = vec![b"11+", b"13"];
 

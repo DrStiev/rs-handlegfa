@@ -1,9 +1,6 @@
 use gfa2::gfa1::GFA;
 use gfa2::gfa2::GFA2;
-use handlegraph2::{
-    hashgraph::HashGraph,
-    mutablehandlegraph::*,
-};
+use handlegraph2::{hashgraph::HashGraph, mutablehandlegraph::*};
 
 use bstr::BString;
 use std::fs::File;
@@ -17,15 +14,11 @@ use std::path::Path;
 /// use handle_gfa::fileoperation::*;
 /// save_as_gfa2_file(&graph, Some(String::from("./tests/output_files/gfa2_to_file.gfa")));
 /// ```
-pub fn save_as_gfa2_file(
-    graph: &HashGraph,
-    path: Option<String>,
-) -> Result<(), std::io::Error> {
+pub fn save_as_gfa2_file(graph: &HashGraph, path: Option<String>) -> Result<(), std::io::Error> {
     use handlegraph2::conversion;
 
-    let path = path.unwrap_or_else(|| String::from(
-        "./tests/output_files/default_path/file_gfa2.gfa",
-    ));
+    let path =
+        path.unwrap_or_else(|| String::from("./tests/output_files/default_path/file_gfa2.gfa"));
     let path = Path::new(&path);
     let mut file = File::create(path)?;
     let gfa_file: GFA2<BString, ()> = conversion::to_gfa2(&graph);
@@ -41,15 +34,11 @@ pub fn save_as_gfa2_file(
 /// use handle_gfa::fileoperation::*;
 /// save_as_gfa1_file(&graph, Some(String::from("./tests/output_files/gfa2_to_file.gfa")));
 /// ```
-pub fn save_as_gfa1_file(
-    graph: &HashGraph,
-    path: Option<String>,
-) -> Result<(), std::io::Error> {
+pub fn save_as_gfa1_file(graph: &HashGraph, path: Option<String>) -> Result<(), std::io::Error> {
     use handlegraph2::conversion;
 
-    let path = path.unwrap_or_else(|| String::from(
-        "./tests/output_files/default_path/file_gfa1.gfa",
-    ));
+    let path =
+        path.unwrap_or_else(|| String::from("./tests/output_files/default_path/file_gfa1.gfa"));
     let path = Path::new(&path);
     let mut file = File::create(path)?;
     let gfa_file: GFA<BString, ()> = conversion::to_gfa(&graph);
@@ -65,8 +54,8 @@ mod tests {
     #[test]
     fn can_save_handlegraph_as_gfa2_file() {
         use handlegraph2::{
-            handle::Edge, hashgraph::HashGraph,
-            mutablehandlegraph::MutableHandleGraph, pathgraph::PathHandleGraph,
+            handle::Edge, hashgraph::HashGraph, mutablehandlegraph::MutableHandleGraph,
+            pathgraph::PathHandleGraph,
         };
 
         let mut graph = HashGraph::new();
@@ -100,8 +89,8 @@ mod tests {
     #[test]
     fn can_save_handlegraph_as_gfa2_file_default_path() {
         use handlegraph2::{
-            handle::Edge, hashgraph::HashGraph,
-            mutablehandlegraph::MutableHandleGraph, pathgraph::PathHandleGraph,
+            handle::Edge, hashgraph::HashGraph, mutablehandlegraph::MutableHandleGraph,
+            pathgraph::PathHandleGraph,
         };
 
         let mut graph = HashGraph::new();
@@ -132,8 +121,8 @@ mod tests {
     #[test]
     fn can_save_handlegraph_as_gfa1_file() {
         use handlegraph2::{
-            handle::Edge, hashgraph::HashGraph,
-            mutablehandlegraph::MutableHandleGraph, pathgraph::PathHandleGraph,
+            handle::Edge, hashgraph::HashGraph, mutablehandlegraph::MutableHandleGraph,
+            pathgraph::PathHandleGraph,
         };
 
         let mut graph = HashGraph::new();
@@ -167,8 +156,8 @@ mod tests {
     #[test]
     fn can_save_handlegraph_as_gfa1_file_default_path() {
         use handlegraph2::{
-            handle::Edge, hashgraph::HashGraph,
-            mutablehandlegraph::MutableHandleGraph, pathgraph::PathHandleGraph,
+            handle::Edge, hashgraph::HashGraph, mutablehandlegraph::MutableHandleGraph,
+            pathgraph::PathHandleGraph,
         };
 
         let mut graph = HashGraph::new();
@@ -200,8 +189,7 @@ mod tests {
     fn can_use_file_gfa2_saved() {
         use gfa2::{parser_gfa2::GFA2Parser, tag::OptionalFields};
 
-        let parser: GFA2Parser<bstr::BString, OptionalFields> =
-            GFA2Parser::new();
+        let parser: GFA2Parser<bstr::BString, OptionalFields> = GFA2Parser::new();
         let gfa2: GFA2<BString, OptionalFields> = parser
             .parse_file("./tests/output_files/file_gfa2.gfa")
             .unwrap();
