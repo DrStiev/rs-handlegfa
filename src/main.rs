@@ -11,7 +11,7 @@ use handlegraph2::hashgraph::HashGraph;
 const TEXT_MESSAGE: &str = "The possible operation on a graph are:\n\
 1. Add Node(s), Link(s) [or Edge(s)] and Path(s)\n\
 2. Remove Node(s), Link(s) [or Edge(s)] and Path(s)\n\
-3. Modify the value of Node(s), Link(s) [or Edge(s)] and Path(s)\n"; 
+3. Modify the value of Node(s), Link(s) [or Edge(s)] and Path(s)\n";
 
 const STOP_MESSAGE: &str = "To STOP modifying the graph, \
 or STOP perform a certain operation type [STOP]\n";
@@ -45,7 +45,6 @@ The 2 elements MUST BE separated by a SINGLE whitespace.\n";
 const REMOVE_PATH_MESSAGE: &str = "To REMOVE a PATH of the graph, please type [PATH_NAME|*] where:\n\
 [PATH_NAME|*] is the id of the new path, the character \"*\" represent that the id it's not provided \n";
 
-
 const MODIFY_MESSAGE: &str = "To MODIFY an element to the graph type: 
 MODIFY [NODE|LINK|PATH] (case insensitive)\n";
 
@@ -68,7 +67,6 @@ const MODIFY_PATH_MESSAGE: &str = "To ADD a PATH into the graph, please type [PA
 This section can contain 1 or more nodeids, every one of them must be separated by a WHITESPACE.\n\
 The 2 elements MUST BE separated by a SINGLE whitespace.\n";
 
-
 fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
     use std::io;
     println!("\n{}\n{}", TEXT_MESSAGE, STOP_MESSAGE);
@@ -79,7 +77,9 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
     let mut stop: bool = false;
     while !stop {
         let mut input = String::new();
-        io::stdin().read_line(&mut input).expect("Failed to read input");
+        io::stdin()
+            .read_line(&mut input)
+            .expect("Failed to read input");
         // remember to use .trim()
         match input.to_uppercase().as_str().trim() {
             "STOP" => stop = true,
@@ -88,14 +88,18 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                 let mut stop_: bool = false;
                 while !stop_ {
                     let mut operation = String::new();
-                    io::stdin().read_line(&mut operation).expect("Failed to read input");
+                    io::stdin()
+                        .read_line(&mut operation)
+                        .expect("Failed to read input");
                     match operation.to_uppercase().as_str().trim() {
                         "STOP" => stop_ = true,
                         _ => {
                             let mut iter = operation.split_whitespace();
                             let id = iter.next();
-                            let id: u64 = if !id.is_none() {
-                                id.unwrap().parse::<u64>().expect("Failed to parse Segment Id")
+                            let id: u64 = if id.is_some() {
+                                id.unwrap()
+                                    .parse::<u64>()
+                                    .expect("Failed to parse Segment Id")
                             } else {
                                 panic!("ID cannot be empty!")
                             };
@@ -112,68 +116,83 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                                     if display_file {
                                         println!();
                                         print_simple_graph(&g);
-                                    } else { 
+                                    } else {
                                         println!("The file it's too big to being displayed");
                                     }
-                                },
+                                }
                                 Err(why) => println!("Error: {}", why),
                             }
                         }
                     }
                 }
-            },
+            }
             "ADD LINK" => {
                 println!("\n{}", ADD_LINK_MESSAGE);
                 let mut stop_: bool = false;
                 while !stop_ {
                     let mut operation = String::new();
-                    io::stdin().read_line(&mut operation).expect("Failed to read input");
+                    io::stdin()
+                        .read_line(&mut operation)
+                        .expect("Failed to read input");
                     match operation.to_uppercase().as_str().trim() {
                         "STOP" => stop_ = true,
                         _ => {
                             let mut iter = operation.split_whitespace();
 
                             let id_from = iter.next();
-                            let id_from: u64 = if !id_from.is_none() {
-                                id_from.unwrap().parse::<u64>().expect("Failed to parse From Segment Id")
+                            let id_from: u64 = if id_from.is_some() {
+                                id_from
+                                    .unwrap()
+                                    .parse::<u64>()
+                                    .expect("Failed to parse From Segment Id")
                             } else {
                                 panic!("ID cannot be empty!")
                             };
 
                             let id_to = iter.next();
-                            let id_to: u64 = if !id_to.is_none() {
-                                id_to.unwrap().parse::<u64>().expect("Failed to parse To Segment Id")
+                            let id_to: u64 = if id_to.is_some() {
+                                id_to
+                                    .unwrap()
+                                    .parse::<u64>()
+                                    .expect("Failed to parse To Segment Id")
                             } else {
                                 panic!("ID cannot be empty!")
                             };
 
-                            match add_link_between_nodes(graph.clone(), id_from, id_to) {
+                            match add_link_between_nodes(
+                                graph.clone(),
+                                id_from,
+                                id_to,
+                            ) {
                                 Ok(g) => {
                                     graph = g.clone();
                                     if display_file {
                                         println!();
                                         print_simple_graph(&g);
-                                    } else { 
+                                    } else {
                                         println!("The file it's too big to being displayed");
                                     }
-                                },
+                                }
                                 Err(why) => println!("Error: {}", why),
                             }
                         }
                     }
                 }
-            },
+            }
             "ADD PATH" => {
                 // TODO: add control for empty or blank id
                 println!("\n{}", ADD_PATH_MESSAGE);
                 let mut stop_: bool = false;
                 while !stop_ {
                     let mut operation = String::new();
-                    io::stdin().read_line(&mut operation).expect("Failed to read input");
+                    io::stdin()
+                        .read_line(&mut operation)
+                        .expect("Failed to read input");
                     match operation.to_uppercase().as_str().trim() {
                         "STOP" => stop_ = true,
                         _ => {
-                            let iter: Vec<&str> = operation.split_whitespace().collect();
+                            let iter: Vec<&str> =
+                                operation.split_whitespace().collect();
                             let mut ids: Vec<&[u8]> = vec![];
 
                             let len: usize = iter.len();
@@ -195,69 +214,81 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                                     if display_file {
                                         println!();
                                         print_simple_graph(&g);
-                                    } else { 
+                                    } else {
                                         println!("The file it's too big to being displayed");
                                     }
-                                },
+                                }
                                 Err(why) => println!("Error: {}", why),
                             }
                         }
                     }
                 }
-            },
+            }
             "REMOVE NODE" => {
                 println!("\n{}", REMOVE_NODE_MESSAGE);
                 let mut stop_: bool = false;
                 while !stop_ {
                     let mut operation = String::new();
-                    io::stdin().read_line(&mut operation).expect("Failed to read input");
+                    io::stdin()
+                        .read_line(&mut operation)
+                        .expect("Failed to read input");
                     match operation.to_uppercase().as_str().trim() {
                         "STOP" => stop_ = true,
                         _ => {
                             let mut iter = operation.split_whitespace();
                             let id = iter.next();
-                            let id: u64 = if !id.is_none() {
-                                id.unwrap().parse::<u64>().expect("Failed to parse Segment Id")
+                            let id: u64 = if id.is_some() {
+                                id.unwrap()
+                                    .parse::<u64>()
+                                    .expect("Failed to parse Segment Id")
                             } else {
                                 panic!("ID cannot be empty!")
-                            };                            
+                            };
                             match remove_node(graph.clone(), id) {
                                 Ok(g) => {
                                     graph = g.clone();
                                     if display_file {
                                         println!();
                                         print_simple_graph(&g);
-                                    } else { 
+                                    } else {
                                         println!("The file it's too big to being displayed");
                                     }
-                                },
+                                }
                                 Err(why) => println!("Error: {}", why),
                             }
                         }
                     }
                 }
-            },
+            }
             "REMOVE LINK" => {
                 println!("\n{}", REMOVE_LINK_MESSAGE);
                 let mut stop_: bool = false;
                 while !stop_ {
                     let mut operation = String::new();
-                    io::stdin().read_line(&mut operation).expect("Failed to read input");
+                    io::stdin()
+                        .read_line(&mut operation)
+                        .expect("Failed to read input");
                     match operation.to_uppercase().as_str().trim() {
                         "STOP" => stop_ = true,
                         _ => {
                             let mut iter = operation.split_whitespace();
 
                             let id_from = iter.next();
-                            let id_from: u64 = if !id_from.is_none() {
-                                id_from.unwrap().parse::<u64>().expect("Failed to parse From Segment Id")
+                            let id_from: u64 = if id_from.is_some() {
+                                id_from
+                                    .unwrap()
+                                    .parse::<u64>()
+                                    .expect("Failed to parse From Segment Id")
                             } else {
                                 panic!("ID cannot be empty!")
                             };
-                            
+
                             let id_to = iter.next();
-                            let id_to: u64 = if !id_to.is_none() {
-                                id_to.unwrap().parse::<u64>().expect("Failed to parse To Segment Id")
+                            let id_to: u64 = if id_to.is_some() {
+                                id_to
+                                    .unwrap()
+                                    .parse::<u64>()
+                                    .expect("Failed to parse To Segment Id")
                             } else {
                                 panic!("ID cannot be empty!")
                             };
@@ -268,89 +299,99 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                                     if display_file {
                                         println!();
                                         print_simple_graph(&g);
-                                    } else { 
+                                    } else {
                                         println!("The file it's too big to being displayed");
                                     }
-                                },
+                                }
                                 Err(why) => println!("Error: {}", why),
                             }
                         }
                     }
                 }
-            },
+            }
             "REMOVE PATH" => {
                 // TODO: add control for empty or blank id
                 println!("\n{}", REMOVE_PATH_MESSAGE);
                 let mut stop_: bool = false;
                 while !stop_ {
                     let mut operation = String::new();
-                    io::stdin().read_line(&mut operation).expect("Failed to read input");
+                    io::stdin()
+                        .read_line(&mut operation)
+                        .expect("Failed to read input");
                     match operation.to_uppercase().as_str().trim() {
                         "STOP" => stop_ = true,
                         _ => {
-                            let iter: Vec<&str> = operation.split_whitespace().collect();
+                            let iter: Vec<&str> =
+                                operation.split_whitespace().collect();
                             let path_id: Option<&[u8]> = if iter[0] == "*" {
                                 None
                             } else {
                                 Some(iter[0].as_bytes())
                             };
-                            
+
                             match remove_path(graph.clone(), path_id) {
                                 Ok(g) => {
                                     graph = g.clone();
                                     if display_file {
                                         println!();
                                         print_simple_graph(&g);
-                                    } else { 
+                                    } else {
                                         println!("The file it's too big to being displayed");
                                     }
-                                },
+                                }
                                 Err(why) => println!("Error: {}", why),
                             }
                         }
                     }
                 }
-            },
+            }
             "MODIFY NODE" => {
                 println!("\n{}", MODIFY_NODE_MESSAGE);
                 let mut stop_: bool = false;
                 while !stop_ {
                     let mut operation = String::new();
-                    io::stdin().read_line(&mut operation).expect("Failed to read input");
+                    io::stdin()
+                        .read_line(&mut operation)
+                        .expect("Failed to read input");
                     match operation.to_uppercase().as_str().trim() {
                         "STOP" => stop_ = true,
                         _ => {
                             let mut iter = operation.split_whitespace();
                             let id = iter.next();
                             let id: u64 = if !id.is_none() {
-                                id.unwrap().parse::<u64>().expect("Failed to parse Segment Id")
+                                id.unwrap()
+                                    .parse::<u64>()
+                                    .expect("Failed to parse Segment Id")
                             } else {
                                 panic!("ID cannot be empty!")
                             };
-                            let sequence: &[u8] = iter.next().unwrap().as_bytes();
-                
+                            let sequence: &[u8] =
+                                iter.next().unwrap().as_bytes();
+
                             match modify_node(graph.clone(), id, sequence) {
                                 Ok(g) => {
                                     graph = g.clone();
                                     if display_file {
                                         println!();
                                         print_simple_graph(&g);
-                                    } else { 
+                                    } else {
                                         println!("The file it's too big to being displayed");
                                     }
-                                },
+                                }
                                 Err(why) => println!("Error: {}", why),
                             }
                         }
                     }
                 }
-            },
+            }
             "MODIFY LINK" => {
                 println!("\n{}", MODIFY_LINK_MESSAGE);
                 let mut stop_: bool = false;
                 while !stop_ {
                     let mut operation = String::new();
-                    io::stdin().read_line(&mut operation).expect("Failed to read input");
+                    io::stdin()
+                        .read_line(&mut operation)
+                        .expect("Failed to read input");
                     match operation.to_uppercase().as_str().trim() {
                         "STOP" => stop_ = true,
                         _ => {
@@ -358,20 +399,29 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
 
                             let id_from = iter.next();
                             let id_from: u64 = if !id_from.is_none() {
-                                id_from.unwrap().parse::<u64>().expect("Failed to parse From Segment Id")
+                                id_from
+                                    .unwrap()
+                                    .parse::<u64>()
+                                    .expect("Failed to parse From Segment Id")
                             } else {
                                 panic!("ID cannot be empty!")
                             };
                             let id_to = iter.next();
                             let id_to: u64 = if !id_to.is_none() {
-                                id_to.unwrap().parse::<u64>().expect("Failed to parse To Segment Id")
+                                id_to
+                                    .unwrap()
+                                    .parse::<u64>()
+                                    .expect("Failed to parse To Segment Id")
                             } else {
                                 panic!("ID cannot be empty!")
                             };
 
                             let new_id_from = iter.next();
                             let new_id_from: u64 = if !new_id_from.is_none() {
-                                new_id_from.unwrap().parse::<u64>().expect("Failed to parse From Segment Id")
+                                new_id_from
+                                    .unwrap()
+                                    .parse::<u64>()
+                                    .expect("Failed to parse From Segment Id")
                             } else {
                                 panic!("ID cannot be empty!")
                             };
@@ -379,52 +429,60 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
 
                             let new_id_to = iter.next();
                             let new_id_to: u64 = if !new_id_to.is_none() {
-                                new_id_to.unwrap().parse::<u64>().expect("Failed to parse To Segment Id")
+                                new_id_to
+                                    .unwrap()
+                                    .parse::<u64>()
+                                    .expect("Failed to parse To Segment Id")
                             } else {
                                 panic!("ID cannot be empty!")
                             };
                             let to_orient = iter.next().unwrap().to_string();
 
                             match modify_link(
-                                graph.clone(), 
-                                id_from, id_to, 
-                                Some(new_id_from), 
-                                Some(from_orient), 
-                                Some(new_id_to), 
-                                Some(to_orient)) {
+                                graph.clone(),
+                                id_from,
+                                id_to,
+                                Some(new_id_from),
+                                Some(from_orient),
+                                Some(new_id_to),
+                                Some(to_orient),
+                            ) {
                                 Ok(g) => {
                                     graph = g.clone();
                                     if display_file {
                                         println!();
                                         print_simple_graph(&g);
-                                    } else { 
+                                    } else {
                                         println!("The file it's too big to being displayed");
                                     }
-                                },
+                                }
                                 Err(why) => println!("Error: {}", why),
                             }
                         }
                     }
                 }
-            },
+            }
             "MODIFY PATH" => {
                 // TODO: add control for empty or blank id
                 println!("\n{}", MODIFY_PATH_MESSAGE);
                 let mut stop_: bool = false;
                 while !stop_ {
                     let mut operation = String::new();
-                    io::stdin().read_line(&mut operation).expect("Failed to read input");
+                    io::stdin()
+                        .read_line(&mut operation)
+                        .expect("Failed to read input");
                     match operation.to_uppercase().as_str().trim() {
                         "STOP" => stop_ = true,
                         _ => {
-                            let iter: Vec<&str> = operation.split_whitespace().collect();
+                            let iter: Vec<&str> =
+                                operation.split_whitespace().collect();
                             let mut ids: Vec<&[u8]> = vec![];
 
                             let len: usize = iter.len();
                             let mut x: usize = 1;
 
-                            let path_id: &[u8] = iter[0].as_bytes(); {
-                            
+                            let path_id: &[u8] = iter[0].as_bytes();
+                            {
                                 while x < len {
                                     ids.push(iter[x].as_bytes());
                                     x += 1;
@@ -436,17 +494,17 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                                         if display_file {
                                             println!();
                                             print_simple_graph(&g);
-                                        } else { 
+                                        } else {
                                             println!("The file it's too big to being displayed");
                                         }
-                                    },
+                                    }
                                     Err(why) => println!("Error: {}", why),
                                 }
                             }
                         }
                     }
                 }
-            },
+            }
             _ => println!("No operation with the command: {}", input),
         }
     }
@@ -458,57 +516,77 @@ fn save(graph: HashGraph, format: &str, file: &str) {
 
     println!("Do you want to save the changes?");
     let mut result = String::new();
-    io::stdin().read_line(&mut result).expect("Failed to read input");
+    io::stdin()
+        .read_line(&mut result)
+        .expect("Failed to read input");
     match result.to_uppercase().as_str().trim() {
-        "YES"|"Y" => {
-                println!("Specify the path where to save the file or the input file will be overwritten.\n\
+        "YES" | "Y" => {
+            println!("Specify the path where to save the file or the input file will be overwritten.\n\
                 \"*\" is the character to use to not specify any path");
-                let mut path = String::new();
-                io::stdin().read_line(&mut path).expect("Failed to read input");
-                match path.trim() {
-                    "*" => {
-                        if format == "GFA1" {
-                            match save_as_gfa1_file(&graph, Some(String::from(file))){
-                                Ok(_) => println!("File saved!"),
-                                Err(why) => println!("Error: {}", why),
-                            };
-                        } else {
-                            match save_as_gfa2_file(&graph, Some(String::from(file))){
-                                Ok(_) => println!("File saved!"),
-                                Err(why) => println!("Error: {}", why),
-                            };
-                        }  
-                    }
-                    " " => {
-                        if format == "GFA1" {
-                            match save_as_gfa1_file(&graph, None){
-                                Ok(_) => println!("File saved!"),
-                                Err(why) => println!("Error: {}", why),
-                            };
-                        } else {
-                            match save_as_gfa2_file(&graph, None){
-                                Ok(_) => println!("File saved!"),
-                                Err(why) => println!("Error: {}", why),
-                            };
-                        }
-                    },
-                    _ => {
-                        if format == "GFA1" {
-                            match save_as_gfa1_file(&graph, Some(String::from(path.trim()))){
-                                Ok(_) => println!("File saved!"),
-                                Err(why) => println!("Error: {}", why),
-                            };
-                        } else {
-                            match save_as_gfa2_file(&graph, Some(String::from(path.trim()))){
-                                Ok(_) => println!("File saved!"),
-                                Err(why) => println!("Error: {}", why),
-                            };
-                        }
+            let mut path = String::new();
+            io::stdin()
+                .read_line(&mut path)
+                .expect("Failed to read input");
+            match path.trim() {
+                "*" => {
+                    if format == "GFA1" {
+                        match save_as_gfa1_file(
+                            &graph,
+                            Some(String::from(file)),
+                        ) {
+                            Ok(_) => println!("File saved!"),
+                            Err(why) => println!("Error: {}", why),
+                        };
+                    } else {
+                        match save_as_gfa2_file(
+                            &graph,
+                            Some(String::from(file)),
+                        ) {
+                            Ok(_) => println!("File saved!"),
+                            Err(why) => println!("Error: {}", why),
+                        };
                     }
                 }
-            }, 
-        "NO"|"N" => println!("File not saved!\nProgram terminated correctly!"),
-        _ => println!("Command not recognized!\nProgram terminated and file not saved!"),
+                " " => {
+                    if format == "GFA1" {
+                        match save_as_gfa1_file(&graph, None) {
+                            Ok(_) => println!("File saved!"),
+                            Err(why) => println!("Error: {}", why),
+                        };
+                    } else {
+                        match save_as_gfa2_file(&graph, None) {
+                            Ok(_) => println!("File saved!"),
+                            Err(why) => println!("Error: {}", why),
+                        };
+                    }
+                }
+                _ => {
+                    if format == "GFA1" {
+                        match save_as_gfa1_file(
+                            &graph,
+                            Some(String::from(path.trim())),
+                        ) {
+                            Ok(_) => println!("File saved!"),
+                            Err(why) => println!("Error: {}", why),
+                        };
+                    } else {
+                        match save_as_gfa2_file(
+                            &graph,
+                            Some(String::from(path.trim())),
+                        ) {
+                            Ok(_) => println!("File saved!"),
+                            Err(why) => println!("Error: {}", why),
+                        };
+                    }
+                }
+            }
+        }
+        "NO" | "N" => {
+            println!("File not saved!\nProgram terminated correctly!")
+        }
+        _ => println!(
+            "Command not recognized!\nProgram terminated and file not saved!"
+        ),
     }
 }
 
@@ -525,44 +603,47 @@ fn main() {
     ).get_matches();
 
     let file = matches.value_of("INPUT").unwrap();
-    let display_file: bool = if fs::metadata(file.clone()).unwrap().len() < 10_000 {
-        true
-    } else {
-        false
-    };
-    match matches.value_of("FORMAT").unwrap().to_string().to_uppercase().as_str(){
-        "GFA1" => {
-            match gfa1_to_handlegraph(file.to_string()) {
-                Ok(g) => {
-                    let mut graph: HashGraph = g;
-                    if display_file {
-                        println!();
-                        print_simple_graph(&graph); 
-                    } else { 
-                        println!("The file it's too big to being displayed");
-                    }
-                    graph = operation(graph, display_file);
-                    save(graph, "GFA1", file)
-                },
-                Err(why) => println!("Error: {}", why),
+    let display_file: bool =
+        if fs::metadata(file.clone()).unwrap().len() < 10_000 {
+            true
+        } else {
+            false
+        };
+    match matches
+        .value_of("FORMAT")
+        .unwrap()
+        .to_string()
+        .to_uppercase()
+        .as_str()
+    {
+        "GFA1" => match gfa1_to_handlegraph(file.to_string()) {
+            Ok(g) => {
+                let mut graph: HashGraph = g;
+                if display_file {
+                    println!();
+                    print_simple_graph(&graph);
+                } else {
+                    println!("The file it's too big to being displayed");
+                }
+                graph = operation(graph, display_file);
+                save(graph, "GFA1", file)
             }
+            Err(why) => println!("Error: {}", why),
         },
-        "GFA2" => {
-            match gfa2_to_handlegraph(file.to_string()) {
-                Ok(g) => {
-                    let mut graph: HashGraph = g;
-                    if display_file {
-                        println!();
-                        print_simple_graph(&graph); 
-                    } else { 
-                        println!("The file it's too big to being displayed");
-                    }
-                    graph = operation(graph, display_file);
-                    save(graph, "GFA2", file)
-                },
-                Err(why) => println!("Error: {}", why),
+        "GFA2" => match gfa2_to_handlegraph(file.to_string()) {
+            Ok(g) => {
+                let mut graph: HashGraph = g;
+                if display_file {
+                    println!();
+                    print_simple_graph(&graph);
+                } else {
+                    println!("The file it's too big to being displayed");
+                }
+                graph = operation(graph, display_file);
+                save(graph, "GFA2", file)
             }
+            Err(why) => println!("Error: {}", why),
         },
         _ => println!("Error! Format not recognized!"),
-    };  
+    };
 }
