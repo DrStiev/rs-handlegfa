@@ -688,8 +688,8 @@ mod tests {
                     graph,
                     11 as u64,
                     "+".to_string(),
-                    12 as u64,
-                    "-".to_string(),
+                    13 as u64,
+                    "+".to_string(),
                     Some(13 as u64),
                     Some("+".to_string()),
                     Some(11 as u64),
@@ -742,10 +742,10 @@ mod tests {
                 print_simple_graph(&graph);
                 match remove_link(
                     graph,
-                    11 as u64,
-                    "+".to_string(),
                     12 as u64,
                     "-".to_string(),
+                    13 as u64,
+                    "+".to_string(),
                 ) {
                     Ok(g) => print_simple_graph(&g),
                     Err(why) => println!("Error: {}", why),
