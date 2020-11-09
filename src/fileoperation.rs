@@ -1,6 +1,6 @@
 use gfa2::gfa1::GFA;
 use gfa2::gfa2::GFA2;
-use handlegraph2::{hashgraph::HashGraph, mutablehandlegraph::*};
+use handlegraph2::hashgraph::HashGraph;
 
 use bstr::BString;
 use std::fs::File;
@@ -50,6 +50,7 @@ pub fn save_as_gfa1_file(graph: &HashGraph, path: Option<String>) -> Result<(), 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use handlegraph2::mutablehandlegraph::*;
 
     #[test]
     fn can_save_handlegraph_as_gfa2_file() {

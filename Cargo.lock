@@ -395,7 +395,7 @@ dependencies = [
 [[package]]
 name = "handlegraph2"
 version = "0.9.1"
-source = "git+https://github.com/DrStiev/rs-handlegraph2#b52a2747cc8db5bb71ab4ef6ed64e2e743d57ab3"
+source = "git+https://github.com/DrStiev/rs-handlegraph2#6a4054bbbf1caff8f0f547911c3c9e301ce8ea0f"
 dependencies = [
  "bio",
  "bstr",

@@ -23,9 +23,11 @@ const ADD_NODE_MESSAGE: &str = "To ADD a NODE into the graph, please type [NODEI
 [NODEID] is the new id of the node (always a number, otherwise an error will be raised)\n\
 [SEQUENCE|*] is the new sequence of the node. The character \"*\" represent that the sequence it's not provided.\n\
 The 2 elements MUST BE separated by a SINGLE whitespace.\n";
-const ADD_LINK_MESSAGE: &str = "To ADD a LINK (or EDGE) into the graph, please type [FROM NODEID] [TO NODEID] where:\n\
+const ADD_LINK_MESSAGE: &str = "To ADD a LINK (or EDGE) into the graph, please type [FROM NODEID] [+-] [TO NODEID] [+-] where:\n\
 [FROM NODEID] is the id of the node where the link starts (always a number, otherwise an error will be raised)\n\
+[+-] is the orientation of the starting node.\n\
 [TO NODEID] is the id of the node where the link ends (always a number, otherwise an error will be raised).\n\
+[+-] is the orientation of the ending node.\n\
 The 2 elements MUST BE separated by a SINGLE whitespace.\n";
 const ADD_PATH_MESSAGE: &str = "To ADD a PATH into the graph, please type [PATH_ID|*] [NODEID(+-)] where:\n\
 [PATH_ID|*] is the id of the new path, the character \"*\" represent that the id it's not provided \n\
@@ -38,9 +40,11 @@ REMOVE [NODE|LINK|PATH] (case insensitive)\n";
 
 const REMOVE_NODE_MESSAGE: &str = "To REMOVE a NODE of the graph, please type [NODEID] where:\n\
 [NODEID] is the new id of the node (always a number, otherwise an error will be raised)\n";
-const REMOVE_LINK_MESSAGE: &str = "To REMOVE a LINK (or EDGE) of the graph, please type [FROM NODEID] [TO NODEID] where:\n\
+const REMOVE_LINK_MESSAGE: &str = "To REMOVE a LINK (or EDGE) of the graph, please type [FROM NODEID] [+-] [TO NODEID] [+-] where:\n\
 [FROM NODEID] is the id of the node where the link starts (always a number, otherwise an error will be raised)\n\
+[+-] is the orientation of the starting node.\n\
 [TO NODEID] is the id of the node where the link ends (always a number, otherwise an error will be raised).\n\
+[+-] is the orientation of the ending node.\n\
 The 2 elements MUST BE separated by a SINGLE whitespace.\n";
 const REMOVE_PATH_MESSAGE: &str = "To REMOVE a PATH of the graph, please type [PATH_NAME|*] where:\n\
 [PATH_NAME|*] is the id of the new path, the character \"*\" represent that the id it's not provided \n";
@@ -53,9 +57,12 @@ const MODIFY_NODE_MESSAGE: &str =
 [NODEID] is the new id of the node (always a number, otherwise an error will be raised)\n\
 [SEQUENCE] is the new sequence of the node.\n\
 The 2 elements MUST BE separated by a SINGLE whitespace.\n";
-const MODIFY_LINK_MESSAGE: &str = "To MODIFY a LINK (or EDGE) into the graph, please type [FROM NODEID] [TO NODEID] [NEW FROM NODEID|*] [+-] [NEW TO NODEID|*] [+-] where:\n\
+const MODIFY_LINK_MESSAGE: &str = "To MODIFY a LINK (or EDGE) into the graph, please type \
+[FROM NODEID] [+-] [TO NODEID] [+-] [NEW FROM NODEID|*] [+-] [NEW TO NODEID|*] [+-] where:\n\
 [FROM NODEID] is the id of the node where the link starts (always a number, otherwise an error will be raised)\n\
+[+-] is the orientation of the old starting node.\n\
 [TO NODEID] is the id of the node where the link ends (always a number, otherwise an error will be raised).\n\
+[+-] is the orientation of the old ending node.\n\
 [NEW FROM NODEID|*] is the id of the new starting node (always a number, otherwise an error will be raised).\n\
 The character \"*\" represent that the sequence it's not provided, so it will be used the [FROM NODEID] id.\n\
 [+-] is the orientation of the new starting node.\n\
@@ -96,9 +103,10 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                         .expect("Failed to read input");
                     match operation.to_uppercase().as_str().trim() {
                         "STOP" => {
-                            println!("{}", ADD_MESSAGE);
+                            println!("\n{}", ADD_MESSAGE);
                             println!("{}", REMOVE_MESSAGE);
                             println!("{}", MODIFY_MESSAGE);
+                            println!("{}\n", STOP_MESSAGE);
                             stop_ = true
                         }
                         _ => {
@@ -145,9 +153,10 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                         .expect("Failed to read input");
                     match operation.to_uppercase().as_str().trim() {
                         "STOP" => {
-                            println!("{}", ADD_MESSAGE);
+                            println!("\n{}", ADD_MESSAGE);
                             println!("{}", REMOVE_MESSAGE);
                             println!("{}", MODIFY_MESSAGE);
+                            println!("{}\n", STOP_MESSAGE);
                             stop_ = true
                         }
                         _ => {
@@ -161,6 +170,7 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                                     .expect("Failed to parse From Segment Id"),
                                 _ => panic!("ID cannot be empty!"),
                             };
+                            let from_orient = iter.next().unwrap().to_string();
 
                             let id_to = iter.next();
                             let id_to: u64 = match id_to {
@@ -170,8 +180,15 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                                     .expect("Failed to parse To Segment Id"),
                                 _ => panic!("ID cannot be empty!"),
                             };
+                            let to_orient = iter.next().unwrap().to_string();
 
-                            match add_link_between_nodes(graph.clone(), id_from, id_to) {
+                            match add_link_between_nodes(
+                                graph.clone(),
+                                id_from,
+                                from_orient,
+                                id_to,
+                                to_orient,
+                            ) {
                                 Ok(g) => {
                                     graph = g.clone();
                                     if display_file {
@@ -198,9 +215,10 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                         .expect("Failed to read input");
                     match operation.to_uppercase().as_str().trim() {
                         "STOP" => {
-                            println!("{}", ADD_MESSAGE);
+                            println!("\n{}", ADD_MESSAGE);
                             println!("{}", REMOVE_MESSAGE);
                             println!("{}", MODIFY_MESSAGE);
+                            println!("{}\n", STOP_MESSAGE);
                             stop_ = true
                         }
                         _ => {
@@ -247,9 +265,10 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                         .expect("Failed to read input");
                     match operation.to_uppercase().as_str().trim() {
                         "STOP" => {
-                            println!("{}", ADD_MESSAGE);
+                            println!("\n{}", ADD_MESSAGE);
                             println!("{}", REMOVE_MESSAGE);
                             println!("{}", MODIFY_MESSAGE);
+                            println!("{}\n", STOP_MESSAGE);
                             stop_ = true
                         }
                         _ => {
@@ -289,9 +308,10 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                         .expect("Failed to read input");
                     match operation.to_uppercase().as_str().trim() {
                         "STOP" => {
-                            println!("{}", ADD_MESSAGE);
+                            println!("\n{}", ADD_MESSAGE);
                             println!("{}", REMOVE_MESSAGE);
                             println!("{}", MODIFY_MESSAGE);
+                            println!("{}\n", STOP_MESSAGE);
                             stop_ = true
                         }
                         _ => {
@@ -305,6 +325,7 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                                     .expect("Failed to parse From Segment Id"),
                                 _ => panic!("ID cannot be empty!"),
                             };
+                            let from_orient = iter.next().unwrap().to_string();
 
                             let id_to = iter.next();
                             let id_to: u64 = match id_to {
@@ -314,8 +335,10 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                                     .expect("Failed to parse To Segment Id"),
                                 _ => panic!("ID cannot be empty!"),
                             };
+                            let to_orient = iter.next().unwrap().to_string();
 
-                            match remove_link(graph.clone(), id_from, id_to) {
+                            match remove_link(graph.clone(), id_from, from_orient, id_to, to_orient)
+                            {
                                 Ok(g) => {
                                     graph = g.clone();
                                     if display_file {
@@ -342,9 +365,10 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                         .expect("Failed to read input");
                     match operation.to_uppercase().as_str().trim() {
                         "STOP" => {
-                            println!("{}", ADD_MESSAGE);
+                            println!("\n{}", ADD_MESSAGE);
                             println!("{}", REMOVE_MESSAGE);
                             println!("{}", MODIFY_MESSAGE);
+                            println!("{}\n", STOP_MESSAGE);
                             stop_ = true
                         }
                         _ => {
@@ -382,9 +406,10 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                         .expect("Failed to read input");
                     match operation.to_uppercase().as_str().trim() {
                         "STOP" => {
-                            println!("{}", ADD_MESSAGE);
+                            println!("\n{}", ADD_MESSAGE);
                             println!("{}", REMOVE_MESSAGE);
                             println!("{}", MODIFY_MESSAGE);
+                            println!("{}\n", STOP_MESSAGE);
                             stop_ = true
                         }
                         _ => {
@@ -426,9 +451,10 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                         .expect("Failed to read input");
                     match operation.to_uppercase().as_str().trim() {
                         "STOP" => {
-                            println!("{}", ADD_MESSAGE);
+                            println!("\n{}", ADD_MESSAGE);
                             println!("{}", REMOVE_MESSAGE);
                             println!("{}", MODIFY_MESSAGE);
+                            println!("{}\n", STOP_MESSAGE);
                             stop_ = true
                         }
                         _ => {
@@ -442,6 +468,8 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                                     .expect("Failed to parse From Segment Id"),
                                 _ => panic!("ID cannot be empty!"),
                             };
+                            let old_from_orient = iter.next().unwrap().to_string();
+
                             let id_to = iter.next();
                             let id_to: u64 = match id_to {
                                 Some(_) => id_to
@@ -450,6 +478,7 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                                     .expect("Failed to parse To Segment Id"),
                                 _ => panic!("ID cannot be empty!"),
                             };
+                            let old_to_orient = iter.next().unwrap().to_string();
 
                             let new_id_from = iter.next();
                             let new_id_from: u64 = match new_id_from {
@@ -476,7 +505,9 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                             match modify_link(
                                 graph.clone(),
                                 id_from,
+                                old_from_orient,
                                 id_to,
+                                old_to_orient,
                                 Some(new_id_from),
                                 Some(from_orient),
                                 Some(new_id_to),
@@ -508,9 +539,10 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                         .expect("Failed to read input");
                     match operation.to_uppercase().as_str().trim() {
                         "STOP" => {
-                            println!("{}", ADD_MESSAGE);
+                            println!("\n{}", ADD_MESSAGE);
                             println!("{}", REMOVE_MESSAGE);
                             println!("{}", MODIFY_MESSAGE);
+                            println!("{}\n", STOP_MESSAGE);
                             stop_ = true
                         }
                         _ => {
@@ -625,8 +657,11 @@ fn main() {
         (author: "Matteo Stievano <m.stievano1@campus.unimib.it>")
         (about: "This program allow the user to make various operation on a GFA2 file
         using instead of a file representation a graph representation.")
-        (@arg INPUT: +required "Sets the input file to use.\nThe only files allowed are: file.gfa or file.gfa2\nAll the other files with different extension will be considered error.")
-        (@arg FORMAT: +required "Sets the the format for the input file to use.\nThe format allowed are ONLY GFA1 and GFA2.")
+        (@arg INPUT: +required "Sets the input file to use.\n\
+        The only files allowed are: file.gfa or file.gfa2\n\
+        All the other files with different extension will be considered error.")
+        (@arg FORMAT: +required "Sets the the format for the input file to use.\n\
+        The format allowed are ONLY GFA1 and GFA2.")
     )
     .get_matches();
 
