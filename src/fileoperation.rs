@@ -18,7 +18,7 @@ pub fn save_as_gfa2_file(graph: &HashGraph, path: Option<String>) -> Result<(), 
     use handlegraph2::conversion;
 
     let path =
-        path.unwrap_or_else(|| String::from("./tests/output_files/default_path/file_gfa2.gfa"));
+        path.unwrap_or_else(|| String::from("./tests/output_files/default_path/file_gfa2.gfa2"));
     let path = Path::new(&path);
     let mut file = File::create(path)?;
     let gfa_file: GFA2<BString, ()> = conversion::to_gfa2(&graph);
@@ -80,7 +80,7 @@ mod tests {
         // save file on a specific path
         match save_as_gfa2_file(
             &graph,
-            Some(String::from("./tests/output_files/file_gfa2.gfa")),
+            Some(String::from("./tests/output_files/file_gfa2.gfa2")),
         ) {
             Ok(_) => println!("Handlegraph saved correctly!"),
             Err(why) => println!("Error: {}", why),
@@ -192,7 +192,7 @@ mod tests {
 
         let parser: GFA2Parser<bstr::BString, OptionalFields> = GFA2Parser::new();
         let gfa2: GFA2<BString, OptionalFields> = parser
-            .parse_file("./tests/output_files/file_gfa2.gfa")
+            .parse_file("./tests/output_files/file_gfa2.gfa2")
             .unwrap();
 
         println!("{}", gfa2);

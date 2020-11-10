@@ -73,50 +73,53 @@ pub fn add_node<T: Into<NodeId>>(
 /// use handle_gfa::graphoperation::*;
 ///
 /// let mut graph = HashGraph::from_gfa(&gfa2);
-/// graph = graph.add_link_between_nodes(graph, 14 as u64, "+".to_string() 15 as u64, "+".to_string()).unwrap();
+/// graph = graph.add_link_between_nodes(graph, b"14+", b"15+").unwrap();
 /// ```
-pub fn add_link_between_nodes<T: Into<NodeId>>(
+pub fn add_link_between_nodes(
     mut graph: HashGraph,
-    from_node: T,
-    from_orientation: String,
-    to_node: T,
-    to_orientation: String,
+    from_node: &[u8],
+    to_node: &[u8],
 ) -> Result<HashGraph, GraphOperationError> {
+    use bstr::ByteSlice;
     use gfa2::gfa2::orientation::Orientation;
 
-    let left_orient: Orientation = match from_orientation.as_str() {
+    let last = from_node.len() - 1;
+    let left_id = from_node[..last].to_str().unwrap();
+
+    let sgn: &str = &from_node[last..].to_str().unwrap();
+    let left_orient: Orientation = match sgn {
         "+" => Orientation::Forward,
         "-" => Orientation::Backward,
         _ => {
             return Err(GraphOperationError::OrientationNotExists(
-                from_node.into().to_string(),
+                from_node.to_str().unwrap().to_string(),
             ))
         }
     };
-    let right_orient: Orientation = match to_orientation.as_str() {
+
+    let last = to_node.len() - 1;
+    let right_id = to_node[..last].to_str().unwrap();
+
+    let sgn: &str = &to_node[last..].to_str().unwrap();
+    let right_orient: Orientation = match sgn {
         "+" => Orientation::Forward,
         "-" => Orientation::Backward,
         _ => {
             return Err(GraphOperationError::OrientationNotExists(
-                to_node.into().to_string(),
+                to_node.to_str().unwrap().to_string(),
             ))
         }
     };
 
-    let from_node: NodeId = from_node.into();
-    let to_node: NodeId = to_node.into();
-
-    // if everything run smooth then create 2 new Handle object
-    // and then, add a new edge to the graph
-    let left = Handle::new(from_node, left_orient);
-    let right = Handle::new(to_node, right_orient);
+    let right = Handle::new(right_id.parse::<u64>().unwrap(), right_orient);
+    let left = Handle::new(left_id.parse::<u64>().unwrap(), left_orient);
 
     if graph.create_edge(Edge(left, right)) {
         Ok(graph)
     } else {
         Err(GraphOperationError::EdgeNotExist(
-            format!("{}{}", from_node.to_string(), left_orient),
-            format!("{}{}", to_node.to_string(), right_orient),
+            format!("{}{}", from_node.to_str().unwrap(), left_orient),
+            format!("{}{}", to_node.to_str().unwrap(), right_orient),
         ))
     }
 }
@@ -206,48 +209,53 @@ pub fn remove_node<T: Into<NodeId>>(
 /// use handle_gfa::graphoperation::*;
 ///
 /// let mut graph = HashGraph::from_gfa(&gfa2);
-/// graph = graph.remove_link(graph, 14 as u64, "+".to_string(), 15 as u64, "+".to_string()).unwrap();
+/// graph = graph.remove_link(graph, b"14+", b"15+").unwrap();
 /// ```
-pub fn remove_link<T: Into<NodeId>>(
+pub fn remove_link(
     mut graph: HashGraph,
-    from_node: T,
-    from_orientation: String,
-    to_node: T,
-    to_orientation: String,
+    from_node: &[u8],
+    to_node: &[u8],
 ) -> Result<HashGraph, GraphOperationError> {
+    use bstr::ByteSlice;
     use gfa2::gfa2::orientation::Orientation;
 
-    let left_orient: Orientation = match from_orientation.as_str() {
+    let last = from_node.len() - 1;
+    let left_id = from_node[..last].to_str().unwrap();
+
+    let sgn: &str = &from_node[last..].to_str().unwrap();
+    let left_orient: Orientation = match sgn {
         "+" => Orientation::Forward,
         "-" => Orientation::Backward,
         _ => {
             return Err(GraphOperationError::OrientationNotExists(
-                from_node.into().to_string(),
+                from_node.to_str().unwrap().to_string(),
             ))
         }
     };
-    let right_orient: Orientation = match to_orientation.as_str() {
+
+    let last = to_node.len() - 1;
+    let right_id = to_node[..last].to_str().unwrap();
+
+    let sgn: &str = &to_node[last..].to_str().unwrap();
+    let right_orient: Orientation = match sgn {
         "+" => Orientation::Forward,
         "-" => Orientation::Backward,
         _ => {
             return Err(GraphOperationError::OrientationNotExists(
-                to_node.into().to_string(),
+                to_node.to_str().unwrap().to_string(),
             ))
         }
     };
 
-    let from_node: NodeId = from_node.into();
-    let to_node: NodeId = to_node.into();
+    let right = Handle::new(right_id.parse::<u64>().unwrap(), right_orient);
+    let left = Handle::new(left_id.parse::<u64>().unwrap(), left_orient);
 
-    let left_handle = Handle::new(from_node, left_orient);
-    let right_handle = Handle::new(to_node, right_orient);
-
-    if graph.remove_edge(Edge(left_handle, right_handle)) {
+    if graph.create_edge(Edge(left, right)) {
         Ok(graph)
     } else {
         Err(GraphOperationError::EdgeNotExist(
-            format!("{}{}", left_handle.id().to_string(), left_orient),
-            format!("{}{}", right_handle.id().to_string(), right_orient),
+            format!("{}{}", from_node.to_str().unwrap(), left_orient),
+            format!("{}{}", to_node.to_str().unwrap(), right_orient),
         ))
     }
 }
@@ -305,84 +313,101 @@ pub fn modify_node<T: Into<NodeId>>(
 /// use handle_gfa::graphoperation::*;
 ///
 /// let mut graph = HashGraph::from_gfa(&gfa2);
-/// graph = graph.modify_link(graph, 14 as u64, 15 as u64, Some(new_from_node as u64), Some("+"), Some(new_to_node as u64), Some("+")).unwrap();
+/// graph = graph.modify_link(graph, b"14+", b"15+", b"14+", b"17-").unwrap();
 /// ```
-pub fn modify_link<T: Into<NodeId>>(
+pub fn modify_link(
     mut graph: HashGraph,
-    from_node: T,
-    from_orientation: String,
-    to_node: T,
-    to_orientation: String,
-    new_from_node: Option<T>,
-    new_from_node_orientation: Option<String>,
-    new_to_node: Option<T>,
-    new_to_node_orientation: Option<String>,
+    from_node: &[u8],
+    to_node: &[u8],
+    new_from_node: Option<&[u8]>,
+    new_to_node: Option<&[u8]>,
 ) -> Result<HashGraph, GraphOperationError> {
+    use bstr::ByteSlice;
     use gfa2::gfa2::orientation::Orientation;
 
-    let left_orient: Orientation = match from_orientation.as_str() {
+    let last = from_node.len() - 1;
+    let old_left_id = from_node[..last].to_str().unwrap();
+
+    let sgn: &str = &from_node[last..].to_str().unwrap();
+    let old_left_orient: Orientation = match sgn {
         "+" => Orientation::Forward,
         "-" => Orientation::Backward,
         _ => {
             return Err(GraphOperationError::OrientationNotExists(
-                from_node.into().to_string(),
+                from_node.to_str().unwrap().to_string(),
             ))
         }
     };
-    let right_orient: Orientation = match to_orientation.as_str() {
+
+    let last = to_node.len() - 1;
+    let old_right_id = to_node[..last].to_str().unwrap();
+
+    let sgn: &str = &to_node[last..].to_str().unwrap();
+    let old_right_orient: Orientation = match sgn {
         "+" => Orientation::Forward,
         "-" => Orientation::Backward,
         _ => {
             return Err(GraphOperationError::OrientationNotExists(
-                to_node.into().to_string(),
+                to_node.to_str().unwrap().to_string(),
             ))
         }
     };
 
-    let new_from_node_orientation = match new_from_node_orientation.unwrap().as_str() {
-        "+" => Orientation::Forward,
-        "-" => Orientation::Backward,
-        _ => Orientation::default(),
+    let old_right = Handle::new(old_right_id.parse::<u64>().unwrap(), old_right_orient);
+    let old_left = Handle::new(old_left_id.parse::<u64>().unwrap(), old_left_orient);
+
+    let new_right = match new_to_node {
+        Some(id) => {
+            let last = id.len() - 1;
+            let new_right_id = id[..last].to_str().unwrap();
+
+            let sgn: &str = &id[last..].to_str().unwrap();
+            let new_right_orient: Orientation = match sgn {
+                "+" => Orientation::Forward,
+                "-" => Orientation::Backward,
+                _ => {
+                    return Err(GraphOperationError::OrientationNotExists(
+                        id.to_str().unwrap().to_string(),
+                    ))
+                }
+            };
+            Some(Handle::new(
+                new_right_id.parse::<u64>().unwrap(),
+                new_right_orient,
+            ))
+        }
+        None => Some(old_right),
     };
 
-    let new_to_node_orientation = match new_to_node_orientation.unwrap().as_str() {
-        "+" => Orientation::Forward,
-        "-" => Orientation::Backward,
-        _ => Orientation::default(),
+    let new_left = match new_from_node {
+        Some(id) => {
+            let last = id.len() - 1;
+            let new_left_id = id[..last].to_str().unwrap();
+
+            let sgn: &str = &id[last..].to_str().unwrap();
+            let new_left_orient: Orientation = match sgn {
+                "+" => Orientation::Forward,
+                "-" => Orientation::Backward,
+                _ => {
+                    return Err(GraphOperationError::OrientationNotExists(
+                        id.to_str().unwrap().to_string(),
+                    ))
+                }
+            };
+            Some(Handle::new(
+                new_left_id.parse::<u64>().unwrap(),
+                new_left_orient,
+            ))
+        }
+        None => Some(old_left),
     };
 
-    let from_node: NodeId = from_node.into();
-    let to_node: NodeId = to_node.into();
-
-    // get and wrap in option the 2 possible new handles
-    let new_left_handle: Option<Handle> = match new_from_node {
-        Some(_) => Some(Handle::new(
-            new_from_node.unwrap().into(),
-            new_from_node_orientation,
-        )),
-        None => None,
-    };
-    let new_right_handle: Option<Handle> = match new_to_node {
-        Some(_) => Some(Handle::new(
-            new_to_node.unwrap().into(),
-            new_to_node_orientation,
-        )),
-        None => None,
-    };
-
-    let left_handle = Handle::new(from_node, left_orient);
-    let right_handle = Handle::new(to_node, right_orient);
-
-    if graph.modify_edge(
-        Edge(left_handle, right_handle),
-        new_left_handle,
-        new_right_handle,
-    ) {
+    if graph.modify_edge(Edge(old_left, old_right), new_left, new_right) {
         Ok(graph)
     } else {
         Err(GraphOperationError::EdgeNotExist(
-            format!("{}{}", left_handle.id().to_string(), left_orient),
-            format!("{}{}", right_handle.id().to_string(), right_orient),
+            format!("{}{}", old_left.id().to_string(), old_left_orient),
+            format!("{}{}", old_right.id().to_string(), old_right_orient),
         ))
     }
 }
@@ -443,7 +468,7 @@ fn print_segments(graph: &HashGraph) {
         let node_id: String = handle.id().to_string();
         let sequence: BString = graph.sequence_iter(handle.forward()).collect();
 
-        println!("\t\t{} [sequence = {}]", node_id, sequence);
+        println!("\t\t{}: {}", node_id, sequence);
     }
     println!("\t}}");
 }
@@ -477,13 +502,15 @@ fn print_paths(graph: &HashGraph) {
     // get all the path
     for path_id in graph.paths_iter() {
         let path = graph.paths.get(&path_id).unwrap();
+        //get the id or path name of a path
+        let name = &path.name;
         let mut first: bool = true;
 
         for (ix, handle) in path.nodes.iter().enumerate() {
             let node = graph.get_node(&handle.id()).unwrap();
             if first {
                 first = false;
-                print!("\t\t");
+                print!("\t\t{}: ", name);
             }
             if ix != 0 {
                 print!(" -> ");
@@ -502,9 +529,9 @@ fn print_paths(graph: &HashGraph) {
 /// /*
 /// Graph: {
 ///     Nodes: {
-///         13 [sequence = CTTGATT]
-///         12 [sequence = TCAAGG]
-///         11 [sequence = ACCTT]
+///         13: CTTGATT
+///         12: TCAAGG
+///         11: ACCTT
 ///     }
 ///     Edges: {
 ///         12 --> 13
@@ -512,10 +539,11 @@ fn print_paths(graph: &HashGraph) {
 ///         11 --> 13
 ///     }
 ///     Paths: {
-///         ACCTT -> CTTGATT
-///         ACCTT -> TCAAGG -> CTTGATT
+///         14: ACCTT -> CTTGATT
+///         15: ACCTT -> TCAAGG -> CTTGATT
 ///     }
 /// }
+/// */
 /// ```
 pub fn print_simple_graph(graph: &HashGraph) {
     println!("Graph: {{");
@@ -543,7 +571,9 @@ mod tests {
     #[test]
     fn can_print_graph() {
         let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
-        let gfa2: GFA2<usize, ()> = parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
+        let gfa2: GFA2<usize, ()> = parser
+            .parse_file("./tests/gfa2_files/spec_q7.gfa2")
+            .unwrap();
         let graph = HashGraph::from_gfa2(&gfa2);
 
         print_simple_graph(&graph);
@@ -579,53 +609,23 @@ mod tests {
             };
         }
         println!("Remove 5 edges");
-        match remove_link(
-            graph.clone(),
-            2138 as u64,
-            "-".to_string(),
-            2137 as u64,
-            "-".to_string(),
-        ) {
+        match remove_link(graph.clone(), b"2138-", b"2137-") {
             Ok(g) => graph = g,
             Err(why) => println!("Error: {}", why),
         };
-        match remove_link(
-            graph.clone(),
-            2139 as u64,
-            "+".to_string(),
-            2140 as u64,
-            "+".to_string(),
-        ) {
+        match remove_link(graph.clone(), b"2139+", b"2140+") {
             Ok(g) => graph = g,
             Err(why) => println!("Error: {}", why),
         };
-        match remove_link(
-            graph.clone(),
-            2139 as u64,
-            "+".to_string(),
-            3090 as u64,
-            "+".to_string(),
-        ) {
+        match remove_link(graph.clone(), b"2139+", b"3090+") {
             Ok(g) => graph = g,
             Err(why) => println!("Error: {}", why),
         };
-        match remove_link(
-            graph.clone(),
-            2139 as u64,
-            "-".to_string(),
-            2138 as u64,
-            "-".to_string(),
-        ) {
+        match remove_link(graph.clone(), b"2139-", b"2138-") {
             Ok(g) => graph = g,
             Err(why) => println!("Error: {}", why),
         };
-        match remove_link(
-            graph.clone(),
-            2140 as u64,
-            "+".to_string(),
-            2141 as u64,
-            "+".to_string(),
-        ) {
+        match remove_link(graph.clone(), b"2140+", b"2141+") {
             Ok(g) => graph = g,
             Err(why) => println!("Error: {}", why),
         };
@@ -644,10 +644,8 @@ mod tests {
             if i > 1 {
                 match add_link_between_nodes(
                     graph.clone(),
-                    4000 + i - 1 as u64,
-                    "+".to_string(),
-                    4000 + i as u64,
-                    "+".to_string(),
+                    format!("{}{}", 4000 + i - 1 as u64, "+".to_string()).as_bytes(),
+                    format!("{}{}", 4000 + i as u64, "+".to_string()).as_bytes(),
                 ) {
                     Ok(g) => graph = g,
                     Err(why) => println!("Error: {}", why),
@@ -655,7 +653,7 @@ mod tests {
             }
         }
         match add_path(graph.clone(), None, paths.clone()) {
-            Ok(g) => graph = g,
+            Ok(_) => (),
             Err(why) => println!("Error: {}", why),
         };
         // modify nodes, edges and paths
@@ -684,17 +682,7 @@ mod tests {
             Ok(g) => {
                 let graph: HashGraph = g;
                 print_simple_graph(&graph);
-                match modify_link(
-                    graph,
-                    11 as u64,
-                    "+".to_string(),
-                    13 as u64,
-                    "+".to_string(),
-                    Some(13 as u64),
-                    Some("+".to_string()),
-                    Some(11 as u64),
-                    Some("+".to_string()),
-                ) {
+                match modify_link(graph, b"11+", b"13+", Some(b"13+"), Some(b"11+")) {
                     Ok(g) => print_simple_graph(&g),
                     Err(why) => println!("Error: {}", why),
                 };
@@ -740,13 +728,7 @@ mod tests {
             Ok(g) => {
                 let graph: HashGraph = g;
                 print_simple_graph(&graph);
-                match remove_link(
-                    graph,
-                    12 as u64,
-                    "-".to_string(),
-                    13 as u64,
-                    "+".to_string(),
-                ) {
+                match remove_link(graph, b"12-", b"13+") {
                     Ok(g) => print_simple_graph(&g),
                     Err(why) => println!("Error: {}", why),
                 };
@@ -786,7 +768,9 @@ mod tests {
     #[test]
     fn can_add_node() {
         let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
-        let gfa2: GFA2<usize, ()> = parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
+        let gfa2: GFA2<usize, ()> = parser
+            .parse_file("./tests/gfa2_files/spec_q7.gfa2")
+            .unwrap();
         let graph2 = HashGraph::from_gfa2(&gfa2);
         print_simple_graph(&graph2);
         match add_node(graph2, 14 as u64, Some(b"TEST_NODE_1")) {
@@ -798,19 +782,15 @@ mod tests {
     #[test]
     fn can_add_link() {
         let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
-        let gfa2: GFA2<usize, ()> = parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
+        let gfa2: GFA2<usize, ()> = parser
+            .parse_file("./tests/gfa2_files/spec_q7.gfa2")
+            .unwrap();
         let mut graph = HashGraph::from_gfa2(&gfa2);
 
         graph = add_node(graph, 14 as u64, Some(b"TEST_NODE_1")).unwrap();
         graph = add_node(graph, 15 as u64, Some(b"TEST_NODE_2")).unwrap();
         print_simple_graph(&graph);
-        match add_link_between_nodes(
-            graph,
-            14 as u64,
-            "+".to_string(),
-            15 as u64,
-            "+".to_string(),
-        ) {
+        match add_link_between_nodes(graph, b"14+", b"15+") {
             Ok(g) => print_simple_graph(&g),
             Err(why) => println!("Error: {}", why),
         };
@@ -819,7 +799,9 @@ mod tests {
     #[test]
     fn can_add_path() {
         let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
-        let gfa2: GFA2<usize, ()> = parser.parse_file("./tests/gfa2_files/spec_q7.gfa").unwrap();
+        let gfa2: GFA2<usize, ()> = parser
+            .parse_file("./tests/gfa2_files/spec_q7.gfa2")
+            .unwrap();
         let graph = HashGraph::from_gfa2(&gfa2);
         let ids: Vec<&[u8]> = vec![b"11+", b"13+"];
         print_simple_graph(&graph);
