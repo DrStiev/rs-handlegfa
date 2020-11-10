@@ -458,70 +458,6 @@ pub fn modify_path(
     }
 }
 
-/// Function that prints all the segments in a graph
-fn print_segments(graph: &HashGraph) {
-    use bstr::BString;
-
-    println!("\tNodes: {{");
-    // get all the nodeid and sequence associated with them
-    for handle in graph.all_handles() {
-        let node_id: String = handle.id().to_string();
-        let sequence: BString = graph.sequence_iter(handle.forward()).collect();
-
-        println!("\t\t{}: {}", node_id, sequence);
-    }
-    println!("\t}}");
-}
-
-/// Function that prints all the edges in a graph
-fn print_edges(graph: &HashGraph) {
-    println!("\tEdges: {{");
-    // get all the link (edge) between nodes
-    for edge in graph.all_edges() {
-        let Edge(left, right) = edge;
-
-        let from_node: String = if !left.id().to_string().is_empty() {
-            left.id().to_string()
-        } else {
-            "NUL".to_string()
-        };
-        let to_node: String = if !right.id().to_string().is_empty() {
-            right.id().to_string()
-        } else {
-            "NUL".to_string()
-        };
-
-        println!("\t\t{} --> {}", from_node, to_node);
-    }
-    println!("\t}}");
-}
-
-/// Function that prints all the paths in a graph
-fn print_paths(graph: &HashGraph) {
-    println!("\tPaths: {{");
-    // get all the path
-    for path_id in graph.paths_iter() {
-        let path = graph.paths.get(&path_id).unwrap();
-        //get the id or path name of a path
-        let name = &path.name;
-        let mut first: bool = true;
-
-        for (ix, handle) in path.nodes.iter().enumerate() {
-            let node = graph.get_node(&handle.id()).unwrap();
-            if first {
-                first = false;
-                print!("\t\t{}: ", name);
-            }
-            if ix != 0 {
-                print!(" -> ");
-            }
-            print!("{}", node.sequence);
-        }
-        println!();
-    }
-    println!("\t}}");
-}
-
 /// Print an HashGraph object in a simplified way
 /// # Example
 /// ```ignore
@@ -534,26 +470,19 @@ fn print_paths(graph: &HashGraph) {
 ///         11: ACCTT
 ///     }
 ///     Edges: {
-///         12 --> 13
-///         11 --> 12
-///         11 --> 13
+///         12- --> 13+
+///         11+ --> 12-
+///         11+ --> 13+
 ///     }
 ///     Paths: {
 ///         14: ACCTT -> CTTGATT
-///         15: ACCTT -> TCAAGG -> CTTGATT
+///         15: ACCTT -> CCTTGA -(TCAAGG) -> CTTGATT
 ///     }
 /// }
 /// */
 /// ```
 pub fn print_simple_graph(graph: &HashGraph) {
-    println!("Graph: {{");
-    // print all the segments
-    print_segments(graph);
-    // print all the edges
-    print_edges(graph);
-    // print all the paths
-    print_paths(graph);
-    println!("}}");
+    graph.print_graph();
 }
 
 // TODO: print the graph as a DeBrujin one in a graphical way
@@ -570,12 +499,19 @@ mod tests {
 
     #[test]
     fn can_print_graph() {
+        use gfa2::{gfa1::GFA, parser_gfa1::GFAParser};
         let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
         let gfa2: GFA2<usize, ()> = parser
             .parse_file("./tests/gfa2_files/spec_q7.gfa2")
             .unwrap();
         let graph = HashGraph::from_gfa2(&gfa2);
+        print_simple_graph(&graph);
 
+        let parser: GFAParser<usize, ()> = GFAParser::new();
+        let gfa: GFA<usize, ()> = parser
+            .parse_file("./tests/gfa1_files/lil.gfa")
+            .unwrap();
+        let graph = HashGraph::from_gfa(&gfa);
         print_simple_graph(&graph);
     }
 
