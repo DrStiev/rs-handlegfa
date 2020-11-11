@@ -498,6 +498,19 @@ mod tests {
     use gfa2::{gfa2::GFA2, parser_gfa2::GFA2Parser};
 
     #[test]
+    fn readme_file_test() {
+        let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
+        let gfa2: GFA2<usize, ()> = parser
+            .parse_file("./tests/gfa2_files/irl.gfa2")
+            .unwrap();
+        println!("{:#?}", gfa2);
+        println!("{}", gfa2);
+        let graph = HashGraph::from_gfa2(&gfa2);
+        println!("{:#?}", graph);
+        print_simple_graph(&graph);
+    }
+
+    #[test]
     fn can_print_graph() {
         use gfa2::{gfa1::GFA, parser_gfa1::GFAParser};
         let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
