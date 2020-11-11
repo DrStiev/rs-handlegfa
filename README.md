@@ -35,7 +35,7 @@ After run the program the first thing shown is the graph obtained from the file 
 After that it's show the possible operation that can be done on the graph.
 > *The graph will be shown only if the file is smaller than 10KB*\
 **REMEMBER**, displaying the graph is done only to make easier the operation on it.\
-But if the file it's bigger than 10KB generally this will create a graph that is not easy to read by a human.\
+If the file it's bigger than 10KB generally this will create a graph that is not simple to read (by a human).\
 So even if the file it's relative small, it's better to not display it.
 
 ```
