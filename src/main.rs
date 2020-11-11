@@ -14,7 +14,7 @@ const TEXT_MESSAGE: &str = "The possible operation on a graph are:\n\
 3. Modify the value of Node(s), Link(s) [or Edge(s)] and Path(s)\n";
 
 const STOP_MESSAGE: &str =
-    "To STOP modifying the graph, or STOP perform a certain operation type [STOP]\n";
+    "To STOP modifying the graph, or STOP perform a certain operation type [STOP] (case insensitive)\n";
 
 const ADD_MESSAGE: &str =
     "To ADD an element to the graph type: ADD [NODE|LINK|PATH] (case insensitive)\n";
@@ -95,7 +95,7 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                             println!("\n{}", ADD_MESSAGE);
                             println!("{}", REMOVE_MESSAGE);
                             println!("{}", MODIFY_MESSAGE);
-                            println!("{}\n", STOP_MESSAGE);
+                            println!("{}", STOP_MESSAGE);
                             stop_ = true
                         }
                         _ => {
@@ -145,7 +145,7 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                             println!("\n{}", ADD_MESSAGE);
                             println!("{}", REMOVE_MESSAGE);
                             println!("{}", MODIFY_MESSAGE);
-                            println!("{}\n", STOP_MESSAGE);
+                            println!("{}", STOP_MESSAGE);
                             stop_ = true
                         }
                         _ => {
@@ -190,7 +190,7 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                             println!("\n{}", ADD_MESSAGE);
                             println!("{}", REMOVE_MESSAGE);
                             println!("{}", MODIFY_MESSAGE);
-                            println!("{}\n", STOP_MESSAGE);
+                            println!("{}", STOP_MESSAGE);
                             stop_ = true
                         }
                         _ => {
@@ -240,7 +240,7 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                             println!("\n{}", ADD_MESSAGE);
                             println!("{}", REMOVE_MESSAGE);
                             println!("{}", MODIFY_MESSAGE);
-                            println!("{}\n", STOP_MESSAGE);
+                            println!("{}", STOP_MESSAGE);
                             stop_ = true
                         }
                         _ => {
@@ -283,7 +283,7 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                             println!("\n{}", ADD_MESSAGE);
                             println!("{}", REMOVE_MESSAGE);
                             println!("{}", MODIFY_MESSAGE);
-                            println!("{}\n", STOP_MESSAGE);
+                            println!("{}", STOP_MESSAGE);
                             stop_ = true
                         }
                         _ => {
@@ -328,7 +328,7 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                             println!("\n{}", ADD_MESSAGE);
                             println!("{}", REMOVE_MESSAGE);
                             println!("{}", MODIFY_MESSAGE);
-                            println!("{}\n", STOP_MESSAGE);
+                            println!("{}", STOP_MESSAGE);
                             stop_ = true
                         }
                         _ => {
@@ -369,7 +369,7 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                             println!("\n{}", ADD_MESSAGE);
                             println!("{}", REMOVE_MESSAGE);
                             println!("{}", MODIFY_MESSAGE);
-                            println!("{}\n", STOP_MESSAGE);
+                            println!("{}", STOP_MESSAGE);
                             stop_ = true
                         }
                         _ => {
@@ -414,7 +414,7 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                             println!("\n{}", ADD_MESSAGE);
                             println!("{}", REMOVE_MESSAGE);
                             println!("{}", MODIFY_MESSAGE);
-                            println!("{}\n", STOP_MESSAGE);
+                            println!("{}", STOP_MESSAGE);
                             stop_ = true
                         }
                         _ => {
@@ -474,7 +474,7 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
                             println!("\n{}", ADD_MESSAGE);
                             println!("{}", REMOVE_MESSAGE);
                             println!("{}", MODIFY_MESSAGE);
-                            println!("{}\n", STOP_MESSAGE);
+                            println!("{}", STOP_MESSAGE);
                             stop_ = true
                         }
                         _ => {
@@ -517,7 +517,7 @@ fn operation(mut graph: HashGraph, display_file: bool) -> HashGraph {
 fn save(graph: HashGraph, format: &str, file: &str) {
     use std::io;
 
-    println!("Do you want to save the changes?");
+    println!("\nDo you want to save the changes?");
     let mut result = String::new();
     io::stdin()
         .read_line(&mut result)
