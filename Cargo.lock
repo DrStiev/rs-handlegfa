@@ -369,7 +369,7 @@ dependencies = [
 [[package]]
 name = "gfa2"
 version = "0.9.9"
-source = "git+https://github.com/DrStiev/rs-gfa2#a3c7fd79c77f5dd19a2aaf820f79ee4ccc127821"
+source = "git+https://github.com/DrStiev/rs-gfa2#d078a26434750880944284aaff1d3e8351f68d58"
 dependencies = [
  "bstr",
  "bytemuck",

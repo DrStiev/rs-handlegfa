@@ -250,12 +250,12 @@ pub fn remove_link(
     let right = Handle::new(right_id.parse::<u64>().unwrap(), right_orient);
     let left = Handle::new(left_id.parse::<u64>().unwrap(), left_orient);
 
-    if graph.create_edge(Edge(left, right)) {
+    if graph.remove_edge(Edge(left, right)) {
         Ok(graph)
     } else {
         Err(GraphOperationError::EdgeNotExist(
-            format!("{}{}", from_node.to_str().unwrap(), left_orient),
-            format!("{}{}", to_node.to_str().unwrap(), right_orient),
+            from_node.to_str().unwrap().to_string(),
+            to_node.to_str().unwrap().to_string(),
         ))
     }
 }
@@ -498,19 +498,6 @@ mod tests {
     use gfa2::{gfa2::GFA2, parser_gfa2::GFA2Parser};
 
     #[test]
-    fn readme_file_test() {
-        let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
-        let gfa2: GFA2<usize, ()> = parser
-            .parse_file("./tests/gfa2_files/irl.gfa2")
-            .unwrap();
-        println!("{:#?}", gfa2);
-        println!("{}", gfa2);
-        let graph = HashGraph::from_gfa2(&gfa2);
-        println!("{:#?}", graph);
-        print_simple_graph(&graph);
-    }
-
-    #[test]
     fn can_print_graph() {
         use gfa2::{gfa1::GFA, parser_gfa1::GFAParser};
         let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
@@ -521,98 +508,25 @@ mod tests {
         print_simple_graph(&graph);
 
         let parser: GFAParser<usize, ()> = GFAParser::new();
-        let gfa: GFA<usize, ()> = parser
-            .parse_file("./tests/gfa1_files/lil.gfa")
-            .unwrap();
+        let gfa: GFA<usize, ()> = parser.parse_file("./tests/gfa1_files/lil.gfa").unwrap();
         let graph = HashGraph::from_gfa(&gfa);
         print_simple_graph(&graph);
     }
 
-    // about 20 seconds
     #[test]
-    fn moddable_medium_graph() {
-        println!("Parse and create graph");
-        let parser: GFA2Parser<usize, ()> = GFA2Parser::new();
-        let gfa2: GFA2<usize, ()> = parser.parse_file("./tests/big_files/test.gfa2").unwrap();
-        let mut graph = HashGraph::from_gfa2(&gfa2);
-
-        // remove nodes, edges and paths
-        println!("Remove 1000 nodes");
-        for i in 1..1001 {
-            match remove_node(graph.clone(), i as u64) {
-                Ok(g) => graph = g,
-                Err(why) => println!("Error: {}", why),
-            };
-        }
-        const PATHS: [&[u8]; 3] = [
-            b"gi|568815592:32578768-32589835",
-            b"gi|568815529:3998044-4011446",
-            b"gi|568815551:3814534-3830133",
-        ];
-        println!("Remove 3 paths");
-        for i in 1..PATHS.len() {
-            let path_name: &[u8] = PATHS.get(i as usize).unwrap();
-            match remove_path(graph.clone(), Some(path_name)) {
-                Ok(g) => graph = g,
-                Err(why) => println!("Error: {}", why),
-            };
-        }
-        println!("Remove 5 edges");
-        match remove_link(graph.clone(), b"2138-", b"2137-") {
-            Ok(g) => graph = g,
-            Err(why) => println!("Error: {}", why),
-        };
-        match remove_link(graph.clone(), b"2139+", b"2140+") {
-            Ok(g) => graph = g,
-            Err(why) => println!("Error: {}", why),
-        };
-        match remove_link(graph.clone(), b"2139+", b"3090+") {
-            Ok(g) => graph = g,
-            Err(why) => println!("Error: {}", why),
-        };
-        match remove_link(graph.clone(), b"2139-", b"2138-") {
-            Ok(g) => graph = g,
-            Err(why) => println!("Error: {}", why),
-        };
-        match remove_link(graph.clone(), b"2140+", b"2141+") {
-            Ok(g) => graph = g,
-            Err(why) => println!("Error: {}", why),
-        };
-
-        println!("Add 10 paths and edges");
-        // add nodes, edges and paths
-        let paths: Vec<&[u8]> = vec![
-            b"5001+", b"5002+", b"5003-", b"5004+", b"5005-", b"5006-", b"5007+", b"5008+",
-            b"5009+", b"5010-",
-        ];
-        for i in 1..11 {
-            match add_node(graph.clone(), 5000 + i as u64, None) {
-                Ok(g) => graph = g,
-                Err(why) => println!("Error: {}", why),
-            };
-            if i > 1 {
-                match add_link_between_nodes(
-                    graph.clone(),
-                    format!("{}{}", 4000 + i - 1 as u64, "+".to_string()).as_bytes(),
-                    format!("{}{}", 4000 + i as u64, "+".to_string()).as_bytes(),
-                ) {
-                    Ok(g) => graph = g,
-                    Err(why) => println!("Error: {}", why),
-                };
+    fn can_convert_file_to_handlegraph() {
+        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa2".to_string()) {
+            Ok(g) => {
+                let graph: HashGraph = g;
+                print_simple_graph(&graph)
             }
-        }
-        match add_path(graph.clone(), None, paths.clone()) {
-            Ok(_) => (),
             Err(why) => println!("Error: {}", why),
         };
-        // modify nodes, edges and paths
-
-        //print_simple_graph(&graph);
     }
 
     #[test]
     fn can_modify_node() {
-        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa".to_string()) {
+        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa2".to_string()) {
             Ok(g) => {
                 let graph: HashGraph = g;
                 print_simple_graph(&graph);
@@ -627,7 +541,7 @@ mod tests {
 
     #[test]
     fn can_modify_edge() {
-        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa".to_string()) {
+        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa2".to_string()) {
             Ok(g) => {
                 let graph: HashGraph = g;
                 print_simple_graph(&graph);
@@ -642,7 +556,7 @@ mod tests {
 
     #[test]
     fn can_modify_path() {
-        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa".to_string()) {
+        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa2".to_string()) {
             Ok(g) => {
                 let graph: HashGraph = g;
                 print_simple_graph(&graph);
@@ -658,7 +572,7 @@ mod tests {
 
     #[test]
     fn can_remove_node() {
-        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa".to_string()) {
+        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa2".to_string()) {
             Ok(g) => {
                 let graph: HashGraph = g;
                 print_simple_graph(&graph);
@@ -673,7 +587,7 @@ mod tests {
 
     #[test]
     fn can_remove_edge() {
-        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa".to_string()) {
+        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa2".to_string()) {
             Ok(g) => {
                 let graph: HashGraph = g;
                 print_simple_graph(&graph);
@@ -690,7 +604,7 @@ mod tests {
     fn can_remove_path() {
         use bstr::BString;
 
-        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa".to_string()) {
+        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa2".to_string()) {
             Ok(g) => {
                 let graph: HashGraph = g;
                 print_simple_graph(&graph);
@@ -698,17 +612,6 @@ mod tests {
                     Ok(g) => print_simple_graph(&g),
                     Err(why) => println!("Error: {}", why),
                 };
-            }
-            Err(why) => println!("Error: {}", why),
-        };
-    }
-
-    #[test]
-    fn can_convert_file_to_handlegraph() {
-        match gfa2_to_handlegraph("./tests/gfa2_files/spec_q7.gfa".to_string()) {
-            Ok(g) => {
-                let graph: HashGraph = g;
-                print_simple_graph(&graph)
             }
             Err(why) => println!("Error: {}", why),
         };
