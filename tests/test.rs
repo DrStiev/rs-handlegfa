@@ -97,6 +97,7 @@ fn moddable_medium_graph() {
 }
 
 #[test]
+#[ignore]
 fn big_graph_with_big_operation() {
     // about 8 minutes
     println!("Parse and create graph");
