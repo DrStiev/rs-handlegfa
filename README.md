@@ -12,3 +12,5 @@ HandleGFA performs three main tasks while running:
    - REMOVE Operation: such as remove nodes, links between them and paths
    - MODIFY Operation: such as modify nodes, links between them and paths
 3. And at last, save the resulting graph back as a GFA file
+
+## Usage

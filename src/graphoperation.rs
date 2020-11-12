@@ -1,7 +1,6 @@
 // manipulate hashgraph
 use handlegraph2::{
     handle::{Edge, Handle, NodeId},
-    handlegraph::*,
     hashgraph::*,
     mutablehandlegraph::*,
     pathgraph::PathHandleGraph,
@@ -56,15 +55,11 @@ pub fn add_node<T: Into<NodeId>>(
     let sequence = sequence.unwrap_or(b"DEFAULT_SEQUENCE");
     let nodeid_temp = nodeid.into();
 
-    for handle in graph.all_handles() {
-        let old_seq_id = handle.id();
-        if old_seq_id == nodeid_temp {
-            return Err(GraphOperationError::IdAlreadyExist(nodeid_temp.to_string()));
-        }
-    }
-
-    graph.create_handle(sequence, nodeid_temp);
-    Ok(graph)
+    if graph.get_node(&nodeid_temp).is_some() {
+        return Err(GraphOperationError::IdAlreadyExist(nodeid_temp.to_string()));
+    } 
+    graph.create_handle(sequence, nodeid_temp);   
+    Ok(graph) 
 }
 
 /// Function that adds a link between 2 existing ```Nodes``` in a graph.
